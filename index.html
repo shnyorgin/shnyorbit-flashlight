@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090c12">
+<meta name="description" content="Shnyorgin Flash an interactive screen flashlight demo.">
+
+<title>Shnyorgin Flash Light, reimagined.</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  color-scheme: dark;
+  --bg: #090c12;
+  --panel: #111720;
+  --text: #eff5fc;
+  --muted: #8c98aa;
+  --accent: #b7ff65;
+  --border: rgba(255, 255, 255, 0.09);
+  --beam-opacity: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 6px;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* Light stays behind the controls; it never traps interaction. */
+.screen-light {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: #f7ffe8;
+  opacity: var(--beam-opacity);
+  transition: opacity 0.65s ease;
+}
+
+.shell {
+  width: min(1120px, calc(100% - 40px));
+  margin: auto;
+}
+
+header {
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+}
+
+.brand-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: #152407;
+  border-radius: 12px;
+  font-size: 25px;
+}
+
+.brand small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 3px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.active-users-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid rgba(183, 255, 101, 0.25);
+  border-radius: 20px;
+  background: rgba(183, 255, 101, 0.06);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  background-color: var(--accent);
+  border-radius: 50%;
+  position: relative;
+}
+
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.header-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+main {
+  padding: 60px 0 42px;
+}
+
+.intro {
+  text-align: center;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border: 1px solid rgba(183, 255, 101, 0.2);
+  border-radius: 30px;
+  color: var(--accent);
+  background: rgba(183, 255, 101, 0.05);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+h1 {
+  margin: 22px 0 15px;
+  font-size: clamp(40px, 7vw, 76px);
+  line-height: 1.06;
+  letter-spacing: -3px;
+}
+
+h1 span {
+  color: var(--accent);
+}
+
+.intro p {
+  max-width: 450px;
+  margin: auto;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.workspace {
+  max-width: 740px;
+  margin: 36px auto 0;
+  padding: 25px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: linear-gradient(145deg, #141b25, #0d1119);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+}
+
+.panel-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-label {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+.status-pill {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: #9da9b8;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+body.is-on .status-pill {
+  border-color: rgba(183, 255, 101, 0.3);
+  color: var(--accent);
+  background: rgba(183, 255, 101, 0.08);
+}
+
+.stage {
+  min-height: 310px;
+  display: grid;
+  place-items: center;
+  position: relative;
+  isolation: isolate;
+}
+
+.halo {
+  position: absolute;
+  width: 270px;
+  height: 270px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.halo::before,
+.halo::after {
+  content: "";
+  position: absolute;
+  border: 1px solid rgba(255, 255, 255, 0.035);
+  border-radius: 50%;
+}
+
+.halo::before {
+  inset: -26px;
+}
+
+.halo::after {
+  inset: 25px;
+}
+
+.glow {
+  position: absolute;
+  z-index: -1;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(183, 255, 101, 0.27),
+    transparent 68%
+  );
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.6s, transform 0.6s;
+  pointer-events: none;
+}
+
+body.is-on .glow {
+  opacity: 1;
+  transform: scale(1.3);
+}
+
+.power {
+  width: 174px;
+  height: 174px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 17px;
+  position: relative;
+  border: 1px solid #414b59;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #2d3745, #10151e 75%);
+  color: #8190a5;
+  box-shadow:
+    0 18px 35px #0008,
+    inset 0 2px 3px #ffffff1a,
+    inset 0 -4px 8px #0008,
+    0 0 0 9px #080d14,
+    0 0 0 10px #ffffff0a;
+  transition: color 0.35s, box-shadow 0.35s, transform 0.2s;
+}
+
+.power:hover {
+  transform: translateY(-3px);
+}
+
+.power:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.power svg {
+  width: 48px;
+  height: 48px;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.power-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+body.is-on .power {
+  color: var(--accent);
+  border-color: #8ebf52;
+  box-shadow:
+    0 18px 35px #0008,
+    inset 0 2px 5px #ffffff14,
+    0 0 0 9px #111b0e,
+    0 0 0 10px #b7ff6538,
+    0 0 45px #b7ff6520;
+}
+
+body.is-on .power svg {
+  filter: drop-shadow(0 0 8px #b7ff6570);
+}
+
+.instruction {
+  min-height: 38px;
+  margin: -4px 0 22px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.controls {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.control-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  font-size: 12px;
+}
+
+output {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 6px;
+  margin: 4px 0;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.readings {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.reading {
+  text-align: center;
+}
+
+.reading + .reading {
+  border-left: 1px solid var(--border);
+}
+
+.reading span {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.reading strong {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.safety {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-height: 52px;
+  padding-top: 16px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.text-button {
+  padding: 6px 2px;
+  border: 0;
+  background: transparent;
+  color: #ccd5e2;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-size: 11px;
+}
+
+.features {
+  max-width: 740px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 20px auto 0;
+}
+
+.feature {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #111720;
+}
+
+.feature-number {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.feature h2 {
+  margin: 14px 0 8px;
+  font-size: 13px;
+  letter-spacing: -0.2px;
+}
+
+.feature p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 0;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+/* Preserve contrast while the screen background is illuminated. */
+body.is-on header,
+body.is-on footer {
+  border-color: #314122;
+}
+
+body.is-on .brand,
+body.is-on h1,
+body.is-on .header-label,
+body.is-on .intro p,
+body.is-on footer,
+body.is-on .brand small {
+  color: #17220e;
+}
+
+body.is-on h1 span {
+  color: #426c17;
+}
+
+body.is-on .eyebrow {
+  color: #273d12;
+  border-color: #57783d;
+  background: #d3efb8;
+}
+
+dialog {
+  width: min(430px, calc(100% - 32px));
+  max-height: 90dvh;
+  overflow-y: auto;
+  padding: 32px;
+  border: 1px solid #35412b;
+  border-radius: 25px;
+  background:
+    radial-gradient(ellipse at top, #26351d 0, transparent 55%),
+    #111720;
+  color: var(--text);
+  box-shadow: 0 40px 100px #0008;
+  text-align: center;
+}
+
+dialog::backdrop {
+  background: rgba(3, 6, 10, 0.82);
+  backdrop-filter: blur(8px);
+}
+
+.lock-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 20px;
+  border: 1px solid #b7ff6530;
+  border-radius: 18px;
+  background: #b7ff6510;
+  color: var(--accent);
+}
+
+.lock-icon svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+dialog h2 {
+  margin: 0 0 12px;
+  font-size: 27px;
+  letter-spacing: -1px;
+}
+
+.modal-copy {
+  color: #9da9b8;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.price {
+  margin: 25px 0 6px;
+  font-size: 58px;
+  font-weight: 800;
+  letter-spacing: -3px;
+}
+
+.price small {
+  vertical-align: top;
+  display: inline-block;
+  margin-top: 10px;
+  margin-right: 4px;
+  color: var(--accent);
+  font-size: 26px;
+}
+
+.price-caption {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.demo-note {
+  margin: 22px 0;
+  padding: 12px;
+  border: 1px dashed #ffffff20;
+  border-radius: 10px;
+  color: #b5c0cf;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.primary,
+.secondary {
+  width: 100%;
+  padding: 15px;
+  border: 0;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.primary {
+  background: var(--accent);
+  color: #17230c;
+}
+
+.primary:hover {
+  background: #cbff93;
+}
+
+.secondary {
+  margin-top: 10px;
+  background: #202936;
+  color: #d5ddea;
+}
+
+.modal-emergency {
+  margin-top: 14px;
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  z-index: 10;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  padding: 14px 20px;
+  border: 1px solid #b7ff6540;
+  border-radius: 13px;
+  background: #172313;
+  color: #d9ffc0;
+  box-shadow: 0 12px 35px #0005;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, 20px);
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+}
+
+.toast.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (max-width: 600px) {
+  .shell {
+    width: calc(100% - 28px);
+  }
+
+  header {
+    min-height: 75px;
+  }
+
+  .header-label {
+    display: none;
+  }
+
+  main {
+    padding-top: 38px;
+  }
+
+  h1 {
+    letter-spacing: -2px;
+  }
+
+  .workspace {
+    padding: 18px;
+  }
+
+  .stage {
+    min-height: 290px;
+  }
+
+  .features {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .feature {
+    padding: 18px;
+  }
+
+  .feature h2 {
+    margin-top: 9px;
+  }
+
+  footer {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="screen-light" aria-hidden="true"></div>
+
+<div class="shell">
+  <header>
+    <a href="#main" class="brand" aria-label="Shnyorgin Flash home">
+      <span class="brand-icon" aria-hidden="true">⚡</span>
+      <span>
+        SHNYORGIN
+        <small>FLASH / SCREEN LIGHT</small>
+      </span>
+    </a>
+
+    <div class="header-right">
+      <div class="active-users-pill">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        <span id="activeCount">5</span> Active People
+      </div>
+
+      <span class="header-label">
+        <span class="dot" aria-hidden="true"></span>
+        Interactive demo
+      </span>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="intro" aria-labelledby="headline">
+      <div class="eyebrow">
+        <span class="dot" aria-hidden="true"></span>
+        SMALL SWITCH. BIG GLOW.
+      </div>
+
+      <h1 id="headline">Light, <span>reimagined.</span></h1>
+
+      <p>
+        Your screen & hardware flash. A little brighter.
+        Meet a beautifully simple flashlight experience.
+      </p>
+    </section>
+
+    <section class="workspace" aria-label="Flashlight controls">
+      <div class="panel-top">
+        <span class="panel-label">SHNYORGIN / CONTROL PANEL</span>
+        <span id="stateBadge" class="status-pill">STANDBY</span>
+      </div>
+
+      <div class="stage">
+        <div class="halo" aria-hidden="true"></div>
+        <div class="glow" aria-hidden="true"></div>
+
+        <button
+          id="powerButton"
+          class="power"
+          type="button"
+          aria-label="Turn screen flashlight on"
+          aria-pressed="false"
+          aria-describedby="instruction"
+        >
+          <svg viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M24 5v18"></path>
+            <path d="M13 12a17 17 0 1 0 22 0"></path>
+          </svg>
+          <span id="powerLabel" class="power-label">TURN ON</span>
+        </button>
+      </div>
+
+      <p id="instruction" class="instruction" role="status">
+        Tap to light up. Main OFF unlock: $50 demo.<br>
+        Emergency OFF is always free.
+      </p>
+
+      <div class="controls">
+        <div class="control-heading">
+          <label for="brightness">Screen glow intensity</label>
+          <output id="brightnessValue" for="brightness">80%</output>
+        </div>
+
+        <input
+          id="brightness"
+          type="range"
+          min="35"
+          max="100"
+          value="80"
+          aria-label="Screen glow intensity"
+        >
+
+        <div class="readings">
+          <div class="reading">
+            <span>Light source</span>
+            <strong id="lightSourceText">Screen + Flash</strong>
+          </div>
+
+          <div class="reading">
+            <span>Session time</span>
+            <strong id="timer">00:00</strong>
+          </div>
+
+          <div class="reading">
+            <span>Main OFF</span>
+            <strong id="accessStatus">Locked</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="safety">
+        <span id="safetyHint">Camera permission requested for torch.</span>
+        <button
+          id="emergencyButton"
+          class="text-button"
+          type="button"
+          hidden
+        >
+          Emergency OFF Free
+        </button>
+      </div>
+    </section>
+
+    <section class="features" aria-label="How it works">
+      <article class="feature">
+        <span class="feature-number">01 / ILLUMINATE</span>
+        <h2>One tap to glow</h2>
+        <p>A soft screen light & torch light with adjustable intensity and instant control.</p>
+      </article>
+
+      <article class="feature">
+        <span class="feature-number">02 / UNLOCK</span>
+        <h2>A playful $50 twist</h2>
+        <p>Try switching OFF to reveal the clearly labeled demo unlock.</p>
+      </article>
+
+      <article class="feature">
+        <span class="feature-number">03 / STAY IN CONTROL</span>
+        <h2>Always a free exit</h2>
+        <p>Use Emergency OFF or press Escape. No real payment required.</p>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <span>© <span id="year"></span> Shnyorgin Flash.</span>
+    <span>Screen effect & Physical LED • No real charges</span>
+  </footer>
+</div>
+
+<dialog
+  id="unlockDialog"
+  aria-labelledby="dialogTitle"
+  aria-describedby="dialogDescription"
+>
+  <div class="lock-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24">
+      <rect x="5" y="10" width="14" height="11" rx="3"></rect>
+      <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+      <path d="M12 14v3"></path>
+    </svg>
+  </div>
+
+  <h2 id="dialogTitle">Unlock the OFF switch.</h2>
+
+  <p id="dialogDescription" class="modal-copy">
+    Your light stays ON while this popup is open.
+    Unlock the main OFF button with a simulated $50 payment,
+    or turn it off for free below.
+  </p>
+
+  <div class="price"><small>$</small>50</div>
+  <div class="price-caption">Demo unlock • Current page session only</div>
+
+  <p class="demo-note">
+    DEMO ONLY — no payment details are collected.
+    Clicking below simulates an unlock and charges nothing.
+  </p>
+
+  <button id="payButton" class="primary" type="button">
+    Pay $50 to unlock OFF Demo
+  </button>
+
+  <button id="backButton" class="secondary" type="button">
+    Keep the light ON
+  </button>
+
+  <button
+    id="modalEmergency"
+    class="text-button modal-emergency"
+    type="button"
+  >
+    Emergency OFF • No payment
+  </button>
+</dialog>
+
+<div
+  id="toast"
+  class="toast"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+></div>
+
+<script>
+"use strict";
+
+const $ = (id) => document.getElementById(id);
+
+const elements = {
+  power: $("powerButton"),
+  powerLabel: $("powerLabel"),
+  badge: $("stateBadge"),
+  instruction: $("instruction"),
+  brightness: $("brightness"),
+  brightnessValue: $("brightnessValue"),
+  timer: $("timer"),
+  access: $("accessStatus"),
+  emergency: $("emergencyButton"),
+  safetyHint: $("safetyHint"),
+  dialog: $("unlockDialog"),
+  pay: $("payButton"),
+  back: $("backButton"),
+  modalEmergency: $("modalEmergency"),
+  toast: $("toast"),
+  activeCount: $("activeCount"),
+  lightSourceText: $("lightSourceText")
+};
+
+const state = {
+  on: false,
+  unlocked: false,
+  processing: false,
+  startedAt: null,
+  timerInterval: null,
+  paymentTimeout: null,
+  toastTimeout: null,
+  mediaStream: null,
+  track: null
+};
+
+$("year").textContent = new Date().getFullYear();
+
+// Live active user simulator:
+// - Changes every 2 seconds randomly between 0 and 10
+// - Spikes between 10 and 15 every 10 seconds
+setInterval(() => {
+  let count = Math.floor(Math.random() * 11); // 0 to 10
+  elements.activeCount.textContent = count;
+}, 2000);
+
+setInterval(() => {
+  let count = Math.floor(Math.random() * 6) + 10; // 10 to 15
+  elements.activeCount.textContent = count;
+}, 10000);
+
+function showToast(message) {
+  clearTimeout(state.toastTimeout);
+  elements.toast.textContent = message;
+  elements.toast.classList.add("visible");
+
+  state.toastTimeout = setTimeout(() => {
+    elements.toast.classList.remove("visible");
+  }, 4000);
+}
+
+// Request permission and control phone hardware torch
+async function setHardwareTorch(enable) {
+  if (enable) {
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        state.mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" }
+        });
+        state.track = state.mediaStream.getVideoTracks()[0];
+        
+        const capabilities = state.track.getCapabilities ? state.track.getCapabilities() : {};
+        if (capabilities.torch) {
+          await state.track.applyConstraints({
+            advanced: [{ torch: true }]
+          });
+          elements.lightSourceText.textContent = "Screen + LED";
+        } else {
+          elements.lightSourceText.textContent = "Screen Only";
+        }
+      }
+    } catch (err) {
+      console.warn("Torch API error or camera permission denied:", err);
+      elements.lightSourceText.textContent = "Screen Only";
+    }
+  } else {
+    if (state.track) {
+      try {
+        const capabilities = state.track.getCapabilities ? state.track.getCapabilities() : {};
+        if (capabilities.torch) {
+          await state.track.applyConstraints({
+            advanced: [{ torch: false }]
+          });
+        }
+      } catch (e) {}
+      state.track.stop();
+      state.track = null;
+    }
+    if (state.mediaStream) {
+      state.mediaStream.getTracks().forEach(t => t.stop());
+      state.mediaStream = null;
+    }
+  }
+}
+
+function updateBrightness() {
+  const brightness = Number(elements.brightness.value);
+  elements.brightnessValue.value = `${brightness}%`;
+
+  const opacity = state.on ? 0.55 + brightness * 0.0045 : 0;
+
+  document.documentElement.style.setProperty(
+    "--beam-opacity",
+    String(opacity)
+  );
+}
+
+function updateTimer() {
+  const seconds = state.startedAt === null
+    ? 0
+    : Math.floor((performance.now() - state.startedAt) / 1000);
+
+  const minutesText = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const secondsText = String(seconds % 60).padStart(2, "0");
+
+  elements.timer.textContent = `${minutesText}:${secondsText}`;
+}
+
+function render() {
+  document.body.classList.toggle("is-on", state.on);
+  elements.power.setAttribute("aria-pressed", String(state.on));
+  elements.power.setAttribute(
+    "aria-label",
+    !state.on
+      ? "Turn flashlight on"
+      : state.unlocked
+      ? "Turn flashlight off"
+      : "View demo unlock for the main off button"
+  );
+
+  elements.powerLabel.textContent = state.on ? "TURN OFF" : "TURN ON";
+  elements.badge.textContent = state.on ? "LIGHT ACTIVE" : "STANDBY";
+  elements.access.textContent = state.unlocked ? "Unlocked" : "Locked";
+  elements.access.style.color = state.unlocked ? "var(--accent)" : "";
+  elements.emergency.hidden = !state.on;
+
+  elements.safetyHint.textContent = state.on
+    ? "Press Esc to turn OFF for free."
+    : "Camera permission unlocks rear LED flash.";
+
+  elements.instruction.textContent = state.on
+    ? state.unlocked
+      ? "Your flashlight is glowing. Tap the power button to turn OFF."
+      : "Light is ON. Tap OFF for the $50 demo unlock, or use free Emergency OFF."
+    : state.unlocked
+    ? "Demo unlock active. Your main power button is now fully unlocked."
+    : "Tap to light up. Main OFF unlock: $50 demo. Emergency OFF is always free.";
+
+  updateBrightness();
+}
+
+function resetPaymentButton() {
+  state.processing = false;
+  elements.pay.disabled = false;
+  elements.pay.removeAttribute("aria-busy");
+  elements.pay.textContent = "Pay $50 to unlock OFF Demo";
+}
+
+function cancelPendingUnlock() {
+  clearTimeout(state.paymentTimeout);
+  state.paymentTimeout = null;
+  resetPaymentButton();
+}
+
+function closeDialog() {
+  cancelPendingUnlock();
+  if (elements.dialog.open) elements.dialog.close();
+}
+
+async function turnOn() {
+  state.on = true;
+  state.startedAt = performance.now();
+
+  clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(updateTimer, 1000);
+
+  updateTimer();
+  render();
+  await setHardwareTorch(true);
+}
+
+async function turnOff(emergency = false) {
+  closeDialog();
+  state.on = false;
+
+  await setHardwareTorch(false);
+
+  clearInterval(state.timerInterval);
+  state.timerInterval = null;
+
+  updateTimer();
+  state.startedAt = null;
+
+  render();
+  elements.power.focus();
+
+  showToast(
+    emergency
+      ? "Light turned OFF for free. You're always in control."
+      : "Light OFF. See you on the bright side."
+  );
+}
+
+elements.power.addEventListener("click", () => {
+  if (!state.on) {
+    turnOn();
+    return;
+  }
+
+  if (state.unlocked) {
+    turnOff();
+    return;
+  }
+
+  if (!elements.dialog.open) {
+    elements.dialog.showModal();
+  }
+});
+
+elements.brightness.addEventListener("input", updateBrightness);
+
+elements.emergency.addEventListener("click", () => turnOff(true));
+elements.modalEmergency.addEventListener("click", () => turnOff(true));
+elements.back.addEventListener("click", closeDialog);
+
+elements.pay.addEventListener("click", () => {
+  if (state.processing) return;
+
+  state.processing = true;
+  elements.pay.disabled = true;
+  elements.pay.setAttribute("aria-busy", "true");
+  elements.pay.textContent = "Simulating unlock… No charge";
+
+  state.paymentTimeout = setTimeout(() => {
+    if (!elements.dialog.open || !state.on) {
+      cancelPendingUnlock();
+      return;
+    }
+
+    state.unlocked = true;
+    closeDialog();
+    render();
+
+    showToast("Demo unlocked! $0 charged. Tap OFF whenever you're ready.");
+  }, 1000);
+});
+
+elements.dialog.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  turnOff(true);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && state.on) {
+    event.preventDefault();
+    turnOff(true);
+  }
+});
+
+render();
+</script>
+</body>
+</html>
