@@ -1,1209 +1,3029 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#090c12">
-<meta name="description" content="Shnyorgin Flash an interactive screen flashlight demo.">
-
-<title>Shnyorgin Flash Light, reimagined.</title>
-
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
-:root {
-  color-scheme: dark;
-  --bg: #090c12;
-  --panel: #111720;
-  --text: #eff5fc;
-  --muted: #8c98aa;
-  --accent: #b7ff65;
-  --border: rgba(255, 255, 255, 0.09);
-  --beam-opacity: 0;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Inter", system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
-button,
-input {
-  font: inherit;
-}
-
-button,
-a,
-input {
-  -webkit-tap-highlight-color: transparent;
-}
-
-button {
-  cursor: pointer;
-}
-
-button:focus-visible,
-a:focus-visible,
-input:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 6px;
-}
-
-button:disabled {
-  cursor: wait;
-  opacity: 0.6;
-}
-
-[hidden] {
-  display: none !important;
-}
-
-/* Light stays behind the controls; it never traps interaction. */
-.screen-light {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: #f7ffe8;
-  opacity: var(--beam-opacity);
-  transition: opacity 0.65s ease;
-}
-
-.shell {
-  width: min(1120px, calc(100% - 40px));
-  margin: auto;
-}
-
-header {
-  min-height: 88px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  border-bottom: 1px solid var(--border);
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: inherit;
-  text-decoration: none;
-  font-weight: 800;
-  letter-spacing: -0.6px;
-}
-
-.brand-icon {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  background: var(--accent);
-  color: #152407;
-  border-radius: 12px;
-  font-size: 25px;
-}
-
-.brand small {
-  display: block;
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 9px;
-  letter-spacing: 3px;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.active-users-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border: 1px solid rgba(183, 255, 101, 0.25);
-  border-radius: 20px;
-  background: rgba(183, 255, 101, 0.06);
-  color: var(--accent);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
-.pulse-dot {
-  width: 7px;
-  height: 7px;
-  background-color: var(--accent);
-  border-radius: 50%;
-  position: relative;
-}
-
-.pulse-dot::after {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  border: 2px solid var(--accent);
-  animation: pulse 1.8s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(0.6); opacity: 1; }
-  100% { transform: scale(1.8); opacity: 0; }
-}
-
-.header-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.dot {
-  width: 6px;
-  height: 6px;
-  flex-shrink: 0;
-  background: var(--accent);
-  border-radius: 50%;
-}
-
-main {
-  padding: 60px 0 42px;
-}
-
-.intro {
-  text-align: center;
-}
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 13px;
-  border: 1px solid rgba(183, 255, 101, 0.2);
-  border-radius: 30px;
-  color: var(--accent);
-  background: rgba(183, 255, 101, 0.05);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 2px;
-}
-
-h1 {
-  margin: 22px 0 15px;
-  font-size: clamp(40px, 7vw, 76px);
-  line-height: 1.06;
-  letter-spacing: -3px;
-}
-
-h1 span {
-  color: var(--accent);
-}
-
-.intro p {
-  max-width: 450px;
-  margin: auto;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.8;
-}
-
-.workspace {
-  max-width: 740px;
-  margin: 36px auto 0;
-  padding: 25px;
-  overflow: hidden;
-  position: relative;
-  border: 1px solid var(--border);
-  border-radius: 28px;
-  background: linear-gradient(145deg, #141b25, #0d1119);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
-}
-
-.panel-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.panel-label {
-  color: var(--muted);
-  font-size: 10px;
-  letter-spacing: 2px;
-}
-
-.status-pill {
-  padding: 7px 10px;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  color: #9da9b8;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-}
-
-body.is-on .status-pill {
-  border-color: rgba(183, 255, 101, 0.3);
-  color: var(--accent);
-  background: rgba(183, 255, 101, 0.08);
-}
-
-.stage {
-  min-height: 310px;
-  display: grid;
-  place-items: center;
-  position: relative;
-  isolation: isolate;
-}
-
-.halo {
-  position: absolute;
-  width: 270px;
-  height: 270px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.halo::before,
-.halo::after {
-  content: "";
-  position: absolute;
-  border: 1px solid rgba(255, 255, 255, 0.035);
-  border-radius: 50%;
-}
-
-.halo::before {
-  inset: -26px;
-}
-
-.halo::after {
-  inset: 25px;
-}
-
-.glow {
-  position: absolute;
-  z-index: -1;
-  width: 300px;
-  height: 300px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(183, 255, 101, 0.27),
-    transparent 68%
-  );
-  opacity: 0;
-  transform: scale(0.7);
-  transition: opacity 0.6s, transform 0.6s;
-  pointer-events: none;
-}
-
-body.is-on .glow {
-  opacity: 1;
-  transform: scale(1.3);
-}
-
-.power {
-  width: 174px;
-  height: 174px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 17px;
-  position: relative;
-  border: 1px solid #414b59;
-  border-radius: 50%;
-  background: linear-gradient(145deg, #2d3745, #10151e 75%);
-  color: #8190a5;
-  box-shadow:
-    0 18px 35px #0008,
-    inset 0 2px 3px #ffffff1a,
-    inset 0 -4px 8px #0008,
-    0 0 0 9px #080d14,
-    0 0 0 10px #ffffff0a;
-  transition: color 0.35s, box-shadow 0.35s, transform 0.2s;
-}
-
-.power:hover {
-  transform: translateY(-3px);
-}
-
-.power:active {
-  transform: translateY(1px) scale(0.98);
-}
-
-.power svg {
-  width: 48px;
-  height: 48px;
-  stroke: currentColor;
-  stroke-width: 2.5;
-  fill: none;
-  stroke-linecap: round;
-}
-
-.power-label {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 3px;
-}
-
-body.is-on .power {
-  color: var(--accent);
-  border-color: #8ebf52;
-  box-shadow:
-    0 18px 35px #0008,
-    inset 0 2px 5px #ffffff14,
-    0 0 0 9px #111b0e,
-    0 0 0 10px #b7ff6538,
-    0 0 45px #b7ff6520;
-}
-
-body.is-on .power svg {
-  filter: drop-shadow(0 0 8px #b7ff6570);
-}
-
-.instruction {
-  min-height: 38px;
-  margin: -4px 0 22px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.6;
-  text-align: center;
-}
-
-.controls {
-  padding: 20px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.025);
-}
-
-.control-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 15px;
-  font-size: 12px;
-}
-
-output {
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
-}
-
-input[type="range"] {
-  width: 100%;
-  height: 6px;
-  margin: 4px 0;
-  cursor: pointer;
-  accent-color: var(--accent);
-}
-
-.readings {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  margin-top: 22px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-}
-
-.reading {
-  text-align: center;
-}
-
-.reading + .reading {
-  border-left: 1px solid var(--border);
-}
-
-.reading span {
-  display: block;
-  margin-bottom: 7px;
-  color: var(--muted);
-  font-size: 9px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-.reading strong {
-  font-size: 13px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.safety {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  min-height: 52px;
-  padding-top: 16px;
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.text-button {
-  padding: 6px 2px;
-  border: 0;
-  background: transparent;
-  color: #ccd5e2;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  font-size: 11px;
-}
-
-.features {
-  max-width: 740px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin: 20px auto 0;
-}
-
-.feature {
-  padding: 20px;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: #111720;
-}
-
-.feature-number {
-  color: var(--accent);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.feature h2 {
-  margin: 14px 0 8px;
-  font-size: 13px;
-  letter-spacing: -0.2px;
-}
-
-.feature p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.7;
-}
-
-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 24px 0;
-  border-top: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1.7;
-}
-
-/* Preserve contrast while the screen background is illuminated. */
-body.is-on header,
-body.is-on footer {
-  border-color: #314122;
-}
-
-body.is-on .brand,
-body.is-on h1,
-body.is-on .header-label,
-body.is-on .intro p,
-body.is-on footer,
-body.is-on .brand small {
-  color: #17220e;
-}
-
-body.is-on h1 span {
-  color: #426c17;
-}
-
-body.is-on .eyebrow {
-  color: #273d12;
-  border-color: #57783d;
-  background: #d3efb8;
-}
-
-dialog {
-  width: min(430px, calc(100% - 32px));
-  max-height: 90dvh;
-  overflow-y: auto;
-  padding: 32px;
-  border: 1px solid #35412b;
-  border-radius: 25px;
-  background:
-    radial-gradient(ellipse at top, #26351d 0, transparent 55%),
-    #111720;
-  color: var(--text);
-  box-shadow: 0 40px 100px #0008;
-  text-align: center;
-}
-
-dialog::backdrop {
-  background: rgba(3, 6, 10, 0.82);
-  backdrop-filter: blur(8px);
-}
-
-.lock-icon {
-  width: 58px;
-  height: 58px;
-  display: grid;
-  place-items: center;
-  margin: 0 auto 20px;
-  border: 1px solid #b7ff6530;
-  border-radius: 18px;
-  background: #b7ff6510;
-  color: var(--accent);
-}
-
-.lock-icon svg {
-  width: 26px;
-  height: 26px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-dialog h2 {
-  margin: 0 0 12px;
-  font-size: 27px;
-  letter-spacing: -1px;
-}
-
-.modal-copy {
-  color: #9da9b8;
-  font-size: 13px;
-  line-height: 1.8;
-}
-
-.price {
-  margin: 25px 0 6px;
-  font-size: 58px;
-  font-weight: 800;
-  letter-spacing: -3px;
-}
-
-.price small {
-  vertical-align: top;
-  display: inline-block;
-  margin-top: 10px;
-  margin-right: 4px;
-  color: var(--accent);
-  font-size: 26px;
-}
-
-.price-caption {
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.demo-note {
-  margin: 22px 0;
-  padding: 12px;
-  border: 1px dashed #ffffff20;
-  border-radius: 10px;
-  color: #b5c0cf;
-  font-size: 11px;
-  line-height: 1.7;
-}
-
-.primary,
-.secondary {
-  width: 100%;
-  padding: 15px;
-  border: 0;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.primary {
-  background: var(--accent);
-  color: #17230c;
-}
-
-.primary:hover {
-  background: #cbff93;
-}
-
-.secondary {
-  margin-top: 10px;
-  background: #202936;
-  color: #d5ddea;
-}
-
-.modal-emergency {
-  margin-top: 14px;
-}
-
-.toast {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  z-index: 10;
-  width: max-content;
-  max-width: calc(100% - 32px);
-  padding: 14px 20px;
-  border: 1px solid #b7ff6540;
-  border-radius: 13px;
-  background: #172313;
-  color: #d9ffc0;
-  box-shadow: 0 12px 35px #0005;
-  font-size: 12px;
-  line-height: 1.5;
-  text-align: center;
-  opacity: 0;
-  transform: translate(-50%, 20px);
-  transition: opacity 0.25s, transform 0.25s;
-  pointer-events: none;
-}
-
-.toast.visible {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-@media (max-width: 600px) {
-  .shell {
-    width: calc(100% - 28px);
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="google-site-verification" content="Md86mT-E8p1nQ67PnaRya-6kKsjQSoOyg6ECuEW6MrU" />
+
+  <!-- Title & Description -->
+  <title>shnyorgin - hire right specialist</title>
+  <meta name="description" content="shnyorgin - hire right specialist. Connect with trusted video editors, photographers, videographers, and tech support experts in Taliparamba, Kannur.">
+  <meta name="keywords" content="shnyorgin, orginshny, shanorgin, orginshan, muhammed shan orgin, shnu orgin, orgin shny, shan orgin, shny orgin, shnyorgin website, shnyorgin directory, shnyorgin local services, shnyorgin media, shnyorgin tech, orgin services, orgin network, shnyorgin business, shny orgin logo, shnyorgin official, shnyorgin portal, shnyorgin nellipramba, orginshny taliparamba, shnyorgin kannur, shnyorgin kerala, taliparamba media directory, kannur tech services, nellipramba tech support, taliparamba video editors, kannur video editors, taliparamba photographers, kannur photographers, nellipramba business directory, taliparamba freelancers, kannur media network, kerala video editing services, taliparamba videographers, kannur videographers, kerala tech support, shnyorgin north taliparamba, shnyorgin north kerala, shny orgin kannur, orgin shan taliparamba, muhammed shan orgin kannur, hire video editor in taliparamba, hire photographer in kannur, best video editors in taliparamba, best photographers in kannur, taliparamba freelance hub, kannur digital service directory, kerala media portal, local service directory taliparamba, kannur freelancer directory, taliparamba tech directory, nellipramba local directory, kannur digital experts, shnyorgin video editor, shny video editing, orgin video production, hire video editor kannur, freelance video editor taliparamba, reels editor kerala, instagram video editor kannur, capcut video editor kerala, wedding video editor kannur, youtube video editor taliparamba, cinematic video editing kerala, color grading specialist kannur, short form content editor, promo video editor taliparamba, commercial video editor kerala, local video editor nellipramba, video post production kannur, motion graphics editor kerala, event video editing taliparamba, video montage editor kerala, social media video editor kannur, reel maker taliparamba, professional video editor kannur, affordable video editor kerala, freelance reels editor, best reels editor in kannur, quick video editor taliparamba, custom video editor kerala, vlog editor taliparamba, content creator video editor, shnyorgin photography, shny videography, orgin media team, photographer in taliparamba, photographer in kannur, videographer in taliparamba, videographer in kannur, freelance photographer kerala, wedding photographer taliparamba, event photographer kannur, product photographer kerala, portrait photographer taliparamba, model shoot photographer kannur, cinematographer taliparamba, camera operator kannur, shoot coordinator kerala, commercial photographer kannur, drone videographer taliparamba, candid photographer kannur, local photographer nellipramba, shnyorgin camera services, video shooting team taliparamba, media production team kannur, creative photographer kerala, outdoor shoot photographer taliparamba, studio photographer kannur, e-commerce photographer kerala, event videographer taliparamba, birthday shoot photographer kannur, reel cameraman taliparamba, shnyorgin tech support, shny IT services, orgin technical support, pc support taliparamba, computer hardware support kannur, software setup specialist taliparamba, freelance IT support kerala, pc assembly expert kannur, local tech support nellipramba, web developer taliparamba, website support kannur, frontend developer kerala, netting technical issues kannur, custom PC builder taliparamba, system troubleshooting kerala, network setup taliparamba, tech directory kannur, it specialist taliparamba, digital support services kerala, computer repair consultant kannur, shnyorgin web services, tech solutions taliparamba, hardware specialist kannur, software installation help kerala, tech assistant taliparamba, local computer expert kannur, it consultant taliparamba, web maintenance kerala, shnyorgin IT team, tech freelancer kannur, shnyorgin business directory, hire right specialist shnyorgin, hire specialists in kannur, hire local freelancers taliparamba, media specialist directory kerala, tech specialist directory kannur, find video editors in kerala, find photographers in taliparamba, find IT experts in kannur, local service directory kerala, verified freelancers taliparamba, creative agency directory kannur, best freelancers in nellipramba, book media specialist online, hire freelance video team, shnyorgin portal kerala, orgin service booking, hire digital creator kannur, freelance booking directory, local specialist finder kerala, find tech support near me, find video editor near me, find photographer near me, local service hub taliparamba, kerala creative network, kannur business directory, taliparamba service portal, shnyorgin client portal, hire online freelancer kerala, shnyorgin service finder, how to hire video editor in taliparamba, best place to find photographers in kannur, shnyorgin official business portal, contact shnyorgin for video editing, shnyorgin local media services, hire right specialist in kerala, find freelance tech support in nellipramba, top rated video editors in kannur, affordable photography services taliparamba, shnyorgin contact number, shnyorgin github site, shnyorgin website link, orginshny services in kerala, muhammed shan orgin video editing, shan orgin tech support, local service finder taliparamba kannur, hire professional reels editor in kerala, shnyorgin creative directory, get website tech support in taliparamba, shnyorgin media directory login, top freelancers in taliparamba area, hire digital media specialist kannur, best tech support specialist nellipramba, shnyorgin local freelance platform, shnyorgin official service directory">
+  <meta name="robots" content="index, follow">
+
+  <!-- Favicon / Search Logo -->
+  <link rel="icon" type="image/jpeg" href="https://cdn.postimage.me/2026/09/20/jarvis.jpg">
+  <link rel="apple-touch-icon" href="https://cdn.postimage.me/2026/09/20/jarvis.jpg">
+
+  <!-- Open Graph -->
+  <meta property="og:site_name" content="shnyorgin">
+  <meta property="og:title" content="shnyorgin - hire right specialist">
+  <meta property="og:description" content="Find and hire the right video editors, photographers, videographers, and IT support specialists in Taliparamba and Kannur.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://shnyorgin.github.io/">
+  <meta property="og:image" content="https://cdn.postimage.me/2026/09/20/jarvis.jpg">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="shnyorgin - hire right specialist">
+  <meta name="twitter:description" content="Find and hire the right video editors, photographers, videographers, and IT support specialists in Taliparamba and Kannur.">
+  <meta name="twitter:image" content="https://cdn.postimage.me/2026/09/20/jarvis.jpg">
+
+  <style>
+  :root {
+    --bg-dark: #0B132B;
+    --bg-center: #1C2541;
+    --ink: #FFFFFF;
+    --card: rgba(28, 37, 65, 0.45);
+    --brass: #38BDF8;
+    --whatsapp-green: #25D366;
+    --line: rgba(255, 255, 255, 0.12);
+    --muted: #94A3B8;
+    --star-gold: #FFD700;
+
+    --gold-color: #FFD700;
+    --silver-color: #E2E8F0;
+    --heart-red: #EF4444;
+  }
+
+  *, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden !important;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body {
+    background: radial-gradient(circle at 50% 40%, var(--bg-center) 0%, var(--bg-dark) 70%);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    line-height: 1.5;
+    padding-bottom: 30px;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Fraunces', serif;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  img, svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Full Screen Video Overlay Styles */
+  #fullscreen-video-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000;
+    z-index: 99999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+  }
+
+  #fullscreen-video-overlay.video-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .video-container-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .video-container-wrapper iframe {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100vw;
+    height: 100vh;
+    transform: translate(-50%, -50%);
+    border: none;
+    pointer-events: none;
+  }
+
+  @media (min-aspect-ratio: 16/9) {
+    .video-container-wrapper iframe {
+      height: 56.25vw;
+    }
+  }
+
+  @media (max-aspect-ratio: 16/9) {
+    .video-container-wrapper iframe {
+      width: 177.78vh;
+    }
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 12px;
   }
 
   header {
-    min-height: 75px;
+    width: 100%;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    background: rgba(11, 19, 43, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
   }
 
-  .header-label {
+  header .wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 100%;
+  }
+
+  nav {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    max-width: 100%;
+  }
+
+  nav a {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    padding: 6px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  nav a:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .saved-nav-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+  }
+
+  .saved-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+  }
+
+  .nav-badge {
+    background: var(--heart-red);
+    color: #fff;
+    font-size: 0.65rem;
+    padding: 1px 5px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+
+  .page {
     display: none;
+    position: relative;
+    z-index: 1;
+    width: 100%;
   }
 
-  main {
-    padding-top: 38px;
+  .page.active {
+    display: block;
   }
 
-  h1 {
-    letter-spacing: -2px;
+  .falling-logos {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.62;
+    width: 100vw;
+    height: 100vh;
   }
 
-  .workspace {
-    padding: 18px;
+  .falling-logo {
+    position: absolute;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    padding: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 9px;
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.82), rgba(15, 23, 42, 0.54));
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 0 14px rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(5px) saturate(1.25);
+    will-change: transform;
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.3));
   }
 
-  .stage {
-    min-height: 290px;
+  .falling-logo svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+    filter: saturate(1.35) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
   }
 
-  .features {
-    grid-template-columns: 1fr;
+  @media (prefers-reduced-motion: reduce) {
+    .falling-logos {
+      display: none;
+    }
+  }
+
+  .hero {
+    padding: 16px 0 12px;
+    text-align: center;
+    position: relative;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.4rem, 5.5vw, 2.5rem);
+    max-width: 720px;
+    margin: 0 auto 8px;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    word-wrap: break-word;
+  }
+
+  .hero h1 .accent {
+    position: relative;
+    font-style: italic;
+    font-weight: 700;
+    color: var(--brass);
+    white-space: normal;
+    display: inline-block;
+  }
+
+  .hero h1 .accent svg {
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    width: 100%;
+    height: 10px;
+  }
+
+  .hero p {
+    color: var(--muted);
+    max-width: 480px;
+    margin: 0 auto;
+    font-size: 0.85rem;
+    padding: 0 4px;
+  }
+
+  .filter-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 0 16px;
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  .filter-tab {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .filter-tab:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .filter-tab.active {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: var(--brass);
+    color: var(--brass);
+  }
+
+  .filter-tab.tab-gold.active {
+    background: rgba(255, 215, 0, 0.15);
+    border-color: var(--gold-color);
+    color: var(--gold-color);
+  }
+
+  .filter-tab.tab-silver.active {
+    background: rgba(226, 232, 240, 0.15);
+    border-color: var(--silver-color);
+    color: var(--silver-color);
+  }
+
+  .categories {
+    padding: 12px 0 20px;
+  }
+
+  .cat-heading {
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .cat-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--gold-color);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+  }
+
+  .cat-heading h2 {
+    font-size: 1.3rem;
+  }
+
+  .cat-heading p {
+    color: var(--muted);
+    margin-top: 2px;
+    font-size: 0.82rem;
+  }
+
+  .grid, .pro-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .card {
+    background: rgba(28, 37, 65, 0.35);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    padding: 14px 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: var(--whatsapp-green);
+    box-shadow: 0 12px 28px -4px rgba(37, 211, 102, 0.35), 0 0 15px rgba(56, 189, 248, 0.2);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .card-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .card-slot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .profile-count-badge {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--brass);
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 2px 5px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+
+  .icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .icon svg {
+    width: 16px;
+    height: 16px;
+    stroke: var(--brass);
+    fill: none;
+    stroke-width: 2;
+  }
+
+  .card h3 {
+    font-size: clamp(0.85rem, 3.8vw, 1rem);
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+    word-break: break-word;
+  }
+
+  .go-inside-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .go-inside-btn svg {
+    width: 12px;
+    height: 12px;
+    stroke: var(--whatsapp-green);
+    fill: none;
+    stroke-width: 2.5;
+  }
+
+  .card:hover .go-inside-btn {
+    background: var(--whatsapp-green);
+  }
+
+  .card:hover .go-inside-btn svg {
+    stroke: #ffffff;
+  }
+
+  .card p {
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin-bottom: 10px;
+    line-height: 1.35;
+  }
+
+  .card .tags, .pro-apps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .card .tags span, .pro-apps span {
+    font-size: 0.65rem;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 2px 6px;
+    border-radius: 10px;
+    color: #CBD5E1;
+    word-break: break-word;
+  }
+
+  .pro-apps span {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: rgba(56, 189, 248, 0.3);
+    color: var(--brass);
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--brass);
+    font-weight: 600;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin: 12px 0 10px;
+    transition: all 0.2s ease;
+  }
+
+  .back-btn:hover {
+    background: rgba(56, 189, 248, 0.22);
+    border-color: var(--brass);
+  }
+
+  .pro-card {
+    background: rgba(28, 37, 65, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    border-radius: 14px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .pro-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px -4px rgba(56, 189, 248, 0.3), 0 0 20px rgba(56, 189, 248, 0.15);
+    border-color: rgba(56, 189, 248, 0.4);
+  }
+
+  .pro-grid .add-profile-card {
+    order: 0;
+  }
+
+  .pro-grid .pro-card[data-tier="gold"] {
+    order: 1;
+  }
+
+  .pro-grid .pro-card[data-tier="silver"] {
+    order: 2;
+  }
+
+  .profile-header-flex {
+    display: flex;
+    align-items: center;
     gap: 10px;
+    width: 100%;
+    min-width: 0;
   }
 
-  .feature {
-    padding: 18px;
+  .pro-avatar-sq {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.2rem;
   }
 
-  .feature h2 {
-    margin-top: 9px;
+  .hemin-photo-img {
+    width: 68px;
+    height: 68px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 2px solid var(--brass);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .profile-header-flex {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    text-align: left;
+    gap: 8px;
+  }
+
+  .pro-info {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pro-info h3,
+  .pro-info .place,
+  .pro-info .role,
+  .pro-info .exp {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .wa-btn {
+    align-self: center;
+    justify-content: center;
+    min-width: 64px;
+    padding: 5px 8px;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+  }
+
+  #editors-page .pro-card:not(.add-profile-card) {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.05), 0 8px 25px rgba(0, 0, 0, 0.3);
+  }
+
+  #photo-video-page .pro-card:not(.add-profile-card) {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%);
+    backdrop-filter: blur(16px);
+    border: 1px solid #38BDF8;
+  }
+  #photo-video-page .pro-card:not(.add-profile-card):hover {
+    border-color: #00BFFF;
+    box-shadow: 0 12px 28px -4px rgba(56, 189, 248, 0.4), 0 0 15px rgba(56, 189, 248, 0.2);
+  }
+
+  #tech-page .pro-card:not(.add-profile-card) {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.12) 100%);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+  #tech-page .pro-card:not(.add-profile-card):hover {
+    border-color: rgba(16, 185, 129, 0.6);
+    box-shadow: 0 12px 28px -4px rgba(16, 185, 129, 0.4), 0 0 15px rgba(16, 185, 129, 0.2);
+  }
+
+  .pro-card-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    width: 100%;
+    padding-right: 0;
+    padding-top: 34px;
+    position: relative;
+    box-sizing: border-box;
+  }
+
+  .pro-card .tier-badge {
+    left: 12px;
+    right: auto;
+    top: 10px;
+  }
+
+  .pro-card-header .wa-btn {
+    position: absolute;
+    top: 0;
+    right: 44px;
+    min-width: 64px;
+    z-index: 3;
+  }
+
+  .pro-card .heart-btn {
+    top: 10px;
+  }
+
+  .tier-badge {
+    position: absolute;
+    top: 10px;
+    right: 42px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    z-index: 2;
+  }
+
+  .tier-badge svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .tier-badge.badge-gold {
+    background: linear-gradient(110deg, #FFD700 0%, #FFF8DC 25%, #FFD700 50%, #B8860B 75%, #FFD700 100%);
+    background-size: 200% auto;
+    color: #0B132B;
+    border: 1px solid rgba(255, 215, 0, 0.8);
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+  }
+
+  .tier-badge.badge-silver {
+    background: rgba(226, 232, 240, 0.18);
+    color: var(--silver-color);
+    border: 1px solid rgba(226, 232, 240, 0.3);
+  }
+
+  .heart-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    transition: all 0.2s ease;
+  }
+
+  .heart-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 2;
+    transition: all 0.2s ease;
+  }
+
+  .heart-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: var(--heart-red);
+  }
+
+  .heart-btn:hover svg {
+    stroke: var(--heart-red);
+  }
+
+  .heart-btn.saved {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: var(--heart-red);
+  }
+
+  .heart-btn.saved svg {
+    fill: var(--heart-red);
+    stroke: var(--heart-red);
+  }
+
+  .empty-saved-msg {
+    text-align: center;
+    padding: 30px 10px;
+    color: var(--muted);
+    font-size: 0.88rem;
+    background: rgba(28, 37, 65, 0.4);
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+    width: 100%;
+  }
+
+  .add-profile-card {
+    position: relative;
+    border: 2px solid transparent !important;
+    background: linear-gradient(rgba(11, 19, 43, 0.8), rgba(11, 19, 43, 0.8)) padding-box,
+                linear-gradient(135deg, var(--brass), #a855f7, var(--whatsapp-green)) border-box !important;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    width: 100%;
+  }
+
+  .add-profile-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(56, 189, 248, 0.3);
+  }
+
+  .add-profile-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--brass);
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+
+  .add-profile-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(56, 189, 248, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+  }
+
+  .pro-info h3 {
+    font-size: 1.05rem;
+    color: #ffffff;
+    line-height: 1.2;
+  }
+
+  .pro-info .place {
+    color: #E2E8F0;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-top: 1px;
+  }
+
+  .pro-info .exp {
+    color: var(--brass);
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 1px;
+  }
+
+  .pro-info .role {
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .wa-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--whatsapp-green);
+    color: #fff;
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  .home-wa-container {
+    text-align: center;
+    margin-top: 18px;
+    width: 100%;
+  }
+
+  .home-wa-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--whatsapp-green);
+    color: #ffffff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+    transition: all 0.25s ease;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .home-wa-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(37, 211, 102, 0.45);
+  }
+
+  .creator-section {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--line);
+    width: 100%;
+  }
+
+  .creator-card {
+    position: relative;
+    border: 2px solid transparent;
+    background: linear-gradient(rgba(11, 19, 43, 0.85), rgba(11, 19, 43, 0.85)) padding-box,
+                linear-gradient(135deg, var(--brass), #ec4899, var(--gold-color)) border-box;
+    backdrop-filter: blur(16px);
+    border-radius: 14px;
+    padding: 14px;
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .creator-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(56, 189, 248, 0.1);
+    border: 2px solid var(--brass);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brass);
+    flex-shrink: 0;
+  }
+
+  .creator-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke: var(--brass);
+    fill: none;
+    stroke-width: 1.8;
+  }
+
+  .creator-badge {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--brass);
+    text-transform: uppercase;
+    background: rgba(56, 189, 248, 0.12);
+    padding: 2px 6px;
+    border-radius: 10px;
+    display: inline-block;
+    margin-bottom: 2px;
+  }
+
+  .creator-details h3 {
+    font-size: 1rem;
+    color: #ffffff;
+  }
+
+  .creator-details .creator-location {
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-top: 1px;
+  }
+
+  .creator-bio {
+    color: #CBD5E1;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    margin-top: 4px;
+  }
+
+  .instagram-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 8px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .instagram-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 39, 67, 0.4);
+  }
+
+  .instagram-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+  }
+
+  .apps-section {
+    margin-top: 0;
+    width: 100%;
+  }
+  .apps-section-title {
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+  }
+
+  .pro-card .pro-apps span {
+    font-size: 0.72rem;
+    padding: 3px 7px;
+  }
+
+  .rating-section {
+    border-top: 1px dashed var(--line);
+    padding-top: 4px;
+    margin-top: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .rating-title {
+    font-size: 0.76rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .rating-stars {
+    color: var(--star-gold);
+    display: flex;
+    gap: 2px;
+  }
+
+  .interactive-stars span {
+    font-size: 1.35rem;
+    cursor: pointer;
+    color: #475569;
+    transition: color 0.2s ease, transform 0.1s ease;
+  }
+
+  .interactive-stars span:hover {
+    transform: scale(1.2);
+  }
+
+  .interactive-stars span.active,
+  .interactive-stars span:hover,
+  .interactive-stars span:hover ~ span {
+    color: var(--star-gold);
+  }
+
+  .skeleton-card {
+    height: 120px;
+    width: 100%;
+    border-radius: 14px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+    background-size: 200% 100%;
+    animation: skeletonLoading 1.5s infinite ease-in-out;
+  }
+
+  @keyframes skeletonLoading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(11, 19, 43, 0.85);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 12px;
+    box-sizing: border-box;
+  }
+
+  .modal-overlay.active {
+    display: flex;
+  }
+
+  .modal {
+    background: #1C2541;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    max-height: 92vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  .modal h2 {
+    font-size: 1.15rem;
+    margin-bottom: 2px;
+    color: #fff;
+  }
+
+  .modal-subtitle {
+    font-size: 0.72rem;
+    color: var(--brass);
+    margin-bottom: 12px;
+  }
+
+  .form-group {
+    margin-bottom: 8px;
+    width: 100%;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    background: rgba(11, 19, 43, 0.6);
+    border: 1px solid var(--line);
+    color: #fff;
+    font-size: 0.82rem;
+    outline: none;
+    box-sizing: border-box;
+  }
+
+  .form-group select option {
+    background: #1C2541;
+    color: #fff;
+  }
+
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--brass);
+  }
+
+  .tier-rates-box {
+    background: rgba(11, 19, 43, 0.6);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px;
+    margin-top: 10px;
+    font-size: 0.72rem;
+  }
+
+  .tier-rates-title {
+    color: var(--brass);
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .tier-rate-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2px;
+  }
+
+  .price-tag {
+    background: rgba(37, 211, 102, 0.15);
+    border: 1px solid var(--whatsapp-green);
+    color: var(--whatsapp-green);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .modal-actions button {
+    flex: 1;
+    padding: 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+
+  .btn-submit {
+    background: var(--whatsapp-green);
+    color: #fff;
+  }
+
+  .btn-cancel {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--muted);
+  }
+
+  .modal-nav-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .btn-nav {
+    flex: 1;
+    padding: 6px;
+    border-radius: 6px;
+    font-weight: 600;
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--brass);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    cursor: pointer;
+    font-size: 0.75rem;
+  }
+
+  .btn-nav:hover {
+    background: rgba(56, 189, 248, 0.25);
+  }
+
+  .wa-chat-footer-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--whatsapp-green);
+    color: #ffffff;
+    padding: 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    margin-top: 10px;
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Image Modal */
+  .img-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    cursor: pointer;
+    padding: 12px;
+    box-sizing: border-box;
+  }
+
+  .img-modal-overlay.active {
+    display: flex;
+  }
+
+  .img-modal-content {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+    object-fit: contain;
   }
 
   footer {
-    flex-direction: column;
-    gap: 4px;
+    padding: 16px 0;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.75rem;
+    border-top: 1px solid var(--line);
+    margin-top: 24px;
+    width: 100%;
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    transition: none !important;
-    animation: none !important;
+  @media(max-width: 639px) {
+    .wrap {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    header {
+      padding: 8px 0;
+    }
+
+    header .wrap {
+      gap: 6px;
+    }
+
+    nav {
+      gap: 1px;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    nav a {
+      font-size: 0.68rem;
+      padding: 5px 4px;
+      gap: 2px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .hero {
+      padding: 14px 0 10px;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.35rem, 7vw, 1.85rem);
+    }
+
+    .hero p {
+      font-size: 0.8rem;
+    }
+
+    .filter-bar {
+      gap: 5px;
+      margin-bottom: 12px;
+    }
+
+    .filter-tab {
+      padding: 5px 8px;
+      font-size: 0.7rem;
+    }
+
+    .pro-card {
+      padding: 10px;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .pro-card-header,
+    .profile-header-flex {
+      min-width: 0;
+    }
+
+    .pro-card-header {
+      padding-top: 32px;
+    }
+
+    .hemin-photo-img {
+      width: 58px;
+      height: 58px;
+    }
+
+    .pro-info h3 {
+      font-size: 0.98rem;
+    }
+
+    .pro-info .place,
+    .pro-info .role,
+    .pro-info .exp {
+      font-size: 0.74rem;
+    }
+
+    .pro-card .tier-badge {
+      left: 10px;
+      top: 9px;
+      font-size: 0.56rem;
+    }
+
+    .pro-card-header .wa-btn {
+      right: 40px;
+      min-width: 58px;
+      padding: 4px 7px;
+      font-size: 0.68rem;
+    }
+
+    .pro-card .heart-btn {
+      top: 9px;
+      right: 7px;
+      width: 26px;
+      height: 26px;
+    }
+
+    .pro-card .pro-apps span {
+      font-size: 0.68rem;
+      padding: 3px 6px;
+    }
+
+    .rating-title {
+      font-size: 0.7rem;
+    }
+
+    .interactive-stars span {
+      font-size: 1.2rem;
+    }
+
+    .home-wa-btn {
+      padding: 9px 14px;
+      font-size: 0.8rem;
+    }
+
+    .back-btn {
+      width: 100%;
+      margin-top: 10px;
+    }
   }
-}
+
+  @media(min-width: 640px) {
+    .grid, .pro-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    .creator-card {
+      flex-direction: row;
+      text-align: left;
+    }
+    body {
+      padding-bottom: 70px;
+    }
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: -20%;
+    pointer-events: none;
+    z-index: -2;
+    opacity: 0.48;
+    background: radial-gradient(circle at 12% 18%, rgba(56, 189, 248, 0.16), transparent 28%), radial-gradient(circle at 88% 76%, rgba(168, 85, 247, 0.14), transparent 30%);
+    filter: blur(32px);
+  }
+
+  body.is-light {
+    --bg-dark: #e7eef9;
+    --bg-center: #f8fbff;
+    --ink: #0f172a;
+    --muted: #475569;
+    --line: rgba(15, 23, 42, 0.16);
+    background: radial-gradient(circle at 50% 10%, var(--bg-center) 0%, var(--bg-dark) 80%);
+  }
+
+  body.is-light header,
+  body.is-light .card,
+  body.is-light .pro-card,
+  body.is-light .creator-card {
+    background-color: rgba(255, 255, 255, 0.72);
+    color: var(--ink);
+  }
+
+  body.js-enhanced .reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+    transition: opacity 0.65s ease, transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  body.js-enhanced .reveal-on-scroll.is-visible { opacity: 1; transform: none; }
+
+  .spotlight-card {
+    --spot-x: 50%;
+    --spot-y: 50%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .spotlight-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    background: radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(125, 211, 252, 0.2), transparent 34%);
+  }
+
+  .spotlight-card:hover::after { opacity: 1; }
+
+  .enhanced-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 8px;
+    flex-shrink: 0;
+  }
+
+  .enhanced-control {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 30px;
+    padding: 0 9px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--ink);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .enhanced-control:hover { transform: translateY(-2px); border-color: var(--brass); background: rgba(56, 189, 248, 0.16); }
+
+  .site-search-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 12vh 16px 24px;
+    background: rgba(2, 6, 23, 0.72);
+    backdrop-filter: blur(12px);
+    box-sizing: border-box;
+  }
+
+  .site-search-overlay.active { display: flex; }
+
+  .site-search-panel {
+    width: min(620px, 100%);
+    overflow: hidden;
+    border: 1px solid rgba(125, 211, 252, 0.35);
+    border-radius: 18px;
+    background: rgba(15, 23, 42, 0.96);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+  }
+
+  .site-search-input {
+    width: 100%;
+    padding: 17px 18px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    outline: 0;
+    background: transparent;
+    color: #fff;
+    font: inherit;
+    font-size: 1rem;
+    box-sizing: border-box;
+  }
+
+  .site-search-results { max-height: 52vh; overflow: auto; padding: 8px; }
+
+  .site-search-result {
+    display: block;
+    width: 100%;
+    padding: 11px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #e2e8f0;
+    cursor: pointer;
+    text-align: left;
+    box-sizing: border-box;
+  }
+
+  .site-search-result:hover { background: rgba(56, 189, 248, 0.14); color: #fff; }
+  .site-search-empty { padding: 18px 12px; color: var(--muted); text-align: center; }
+
+  .toast-stack {
+    position: fixed;
+    right: 16px;
+    bottom: 18px;
+    z-index: 2100;
+    display: grid;
+    gap: 8px;
+    width: min(360px, calc(100vw - 32px));
+  }
+
+  .site-toast {
+    padding: 12px 14px;
+    border: 1px solid rgba(125, 211, 252, 0.3);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.94);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+    color: #e2e8f0;
+    font-size: 0.8rem;
+    animation: toastIn 0.3s ease both;
+  }
+
+  .site-toast.success { border-color: rgba(34, 197, 94, 0.55); }
+  .site-toast.warning { border-color: rgba(251, 191, 36, 0.6); }
+  .count-pulse { animation: countPulse 0.55s ease; }
+
+  .draft-status {
+    position: fixed;
+    left: 16px;
+    bottom: 18px;
+    z-index: 998;
+    color: var(--muted);
+    font-size: 0.68rem;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .draft-status.visible { opacity: 1; }
+
+  @keyframes toastIn { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: none; } }
+  @keyframes countPulse { 0%, 100% { transform: scale(1); } 45% { transform: scale(1.12); color: var(--brass); } }
+
+  @media (max-width: 639px) {
+    .enhanced-toolbar { margin-left: 0; }
+    .enhanced-control { min-width: 30px; padding: 0 7px; }
+    header .wrap { gap: 5px; }
+  }
+  .tetris-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    opacity: 0.5;
+    mix-blend-mode: screen;
+  }
+
 </style>
-</head>
-
-<body>
-<div class="screen-light" aria-hidden="true"></div>
-
-<div class="shell">
-  <header>
-    <a href="#main" class="brand" aria-label="Shnyorgin Flash home">
-      <span class="brand-icon" aria-hidden="true">⚡</span>
-      <span>
-        SHNYORGIN
-        <small>FLASH / SCREEN LIGHT</small>
-      </span>
-    </a>
-
-    <div class="header-right">
-      <div class="active-users-pill">
-        <span class="pulse-dot" aria-hidden="true"></span>
-        <span id="activeCount">5</span> Active People
-      </div>
-
-      <span class="header-label">
-        <span class="dot" aria-hidden="true"></span>
-        Interactive demo
-      </span>
-    </div>
-  </header>
-
-  <main id="main">
-    <section class="intro" aria-labelledby="headline">
-      <div class="eyebrow">
-        <span class="dot" aria-hidden="true"></span>
-        SMALL SWITCH. BIG GLOW.
-      </div>
-
-      <h1 id="headline">Light, <span>reimagined.</span></h1>
-
-      <p>
-        Your screen & hardware flash. A little brighter.
-        Meet a beautifully simple flashlight experience.
-      </p>
-    </section>
-
-    <section class="workspace" aria-label="Flashlight controls">
-      <div class="panel-top">
-        <span class="panel-label">SHNYORGIN / CONTROL PANEL</span>
-        <span id="stateBadge" class="status-pill">STANDBY</span>
-      </div>
-
-      <div class="stage">
-        <div class="halo" aria-hidden="true"></div>
-        <div class="glow" aria-hidden="true"></div>
-
-        <button
-          id="powerButton"
-          class="power"
-          type="button"
-          aria-label="Turn screen flashlight on"
-          aria-pressed="false"
-          aria-describedby="instruction"
-        >
-          <svg viewBox="0 0 48 48" aria-hidden="true">
-            <path d="M24 5v18"></path>
-            <path d="M13 12a17 17 0 1 0 22 0"></path>
-          </svg>
-          <span id="powerLabel" class="power-label">TURN ON</span>
-        </button>
-      </div>
-
-      <p id="instruction" class="instruction" role="status">
-        Tap to light up. Main OFF unlock: $50 demo.<br>
-        Emergency OFF is always free.
-      </p>
-
-      <div class="controls">
-        <div class="control-heading">
-          <label for="brightness">Screen glow intensity</label>
-          <output id="brightnessValue" for="brightness">80%</output>
-        </div>
-
-        <input
-          id="brightness"
-          type="range"
-          min="35"
-          max="100"
-          value="80"
-          aria-label="Screen glow intensity"
-        >
-
-        <div class="readings">
-          <div class="reading">
-            <span>Light source</span>
-            <strong id="lightSourceText">Screen + Flash</strong>
-          </div>
-
-          <div class="reading">
-            <span>Session time</span>
-            <strong id="timer">00:00</strong>
-          </div>
-
-          <div class="reading">
-            <span>Main OFF</span>
-            <strong id="accessStatus">Locked</strong>
-          </div>
-        </div>
-      </div>
-
-      <div class="safety">
-        <span id="safetyHint">Camera permission requested for torch.</span>
-        <button
-          id="emergencyButton"
-          class="text-button"
-          type="button"
-          hidden
-        >
-          Emergency OFF Free
-        </button>
-      </div>
-    </section>
-
-    <section class="features" aria-label="How it works">
-      <article class="feature">
-        <span class="feature-number">01 / ILLUMINATE</span>
-        <h2>One tap to glow</h2>
-        <p>A soft screen light & torch light with adjustable intensity and instant control.</p>
-      </article>
-
-      <article class="feature">
-        <span class="feature-number">02 / UNLOCK</span>
-        <h2>A playful $50 twist</h2>
-        <p>Try switching OFF to reveal the clearly labeled demo unlock.</p>
-      </article>
-
-      <article class="feature">
-        <span class="feature-number">03 / STAY IN CONTROL</span>
-        <h2>Always a free exit</h2>
-        <p>Use Emergency OFF or press Escape. No real payment required.</p>
-      </article>
-    </section>
-  </main>
-
-  <footer>
-    <span>© <span id="year"></span> Shnyorgin Flash.</span>
-    <span>Screen effect & Physical LED • No real charges</span>
-  </footer>
-</div>
-
-<dialog
-  id="unlockDialog"
-  aria-labelledby="dialogTitle"
-  aria-describedby="dialogDescription"
->
-  <div class="lock-icon" aria-hidden="true">
-    <svg viewBox="0 0 24 24">
-      <rect x="5" y="10" width="14" height="11" rx="3"></rect>
-      <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
-      <path d="M12 14v3"></path>
-    </svg>
-  </div>
-
-  <h2 id="dialogTitle">Unlock the OFF switch.</h2>
-
-  <p id="dialogDescription" class="modal-copy">
-    Your light stays ON while this popup is open.
-    Unlock the main OFF button with a simulated $50 payment,
-    or turn it off for free below.
-  </p>
-
-  <div class="price"><small>$</small>50</div>
-  <div class="price-caption">Demo unlock • Current page session only</div>
-
-  <p class="demo-note">
-    DEMO ONLY — no payment details are collected.
-    Clicking below simulates an unlock and charges nothing.
-  </p>
-
-  <button id="payButton" class="primary" type="button">
-    Pay $50 to unlock OFF Demo
-  </button>
-
-  <button id="backButton" class="secondary" type="button">
-    Keep the light ON
-  </button>
-
-  <button
-    id="modalEmergency"
-    class="text-button modal-emergency"
-    type="button"
-  >
-    Emergency OFF • No payment
-  </button>
-</dialog>
-
-<div
-  id="toast"
-  class="toast"
-  role="status"
-  aria-live="polite"
-  aria-atomic="true"
-></div>
-
+<script src="https://player.vimeo.com/api/player.js"></script>
 <script>
-"use strict";
+  let activeGridId = '';
+  let activeServiceType = '';
+  const adminWhatsApp = "919496806919";
 
-const $ = (id) => document.getElementById(id);
+  const currentFilters = {
+    'editors-page': 'all',
+    'photo-video-page': 'all',
+    'tech-page': 'all'
+  };
 
-const elements = {
-  power: $("powerButton"),
-  powerLabel: $("powerLabel"),
-  badge: $("stateBadge"),
-  instruction: $("instruction"),
-  brightness: $("brightness"),
-  brightnessValue: $("brightnessValue"),
-  timer: $("timer"),
-  access: $("accessStatus"),
-  emergency: $("emergencyButton"),
-  safetyHint: $("safetyHint"),
-  dialog: $("unlockDialog"),
-  pay: $("payButton"),
-  back: $("backButton"),
-  modalEmergency: $("modalEmergency"),
-  toast: $("toast"),
-  activeCount: $("activeCount"),
-  lightSourceText: $("lightSourceText")
-};
+  function openImageModal(src) {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('modalImage');
+    img.src = src;
+    modal.classList.add('active');
+  }
 
-const state = {
-  on: false,
-  unlocked: false,
-  processing: false,
-  startedAt: null,
-  timerInterval: null,
-  paymentTimeout: null,
-  toastTimeout: null,
-  mediaStream: null,
-  track: null
-};
+  function closeImageModal() {
+    document.getElementById('imageModal').classList.remove('active');
+  }
 
-$("year").textContent = new Date().getFullYear();
+  function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => {
+      page.classList.remove('active');
+    });
+    document.getElementById(pageId).classList.add('active');
+    
+    if (pageId === 'saved-page') {
+      renderSavedProfiles();
+    }
+    
+    smoothScrollTo(0);
+  }
 
-// Live active user simulator:
-// - Changes every 2 seconds randomly between 0 and 10
-// - Spikes between 10 and 15 every 10 seconds
-setInterval(() => {
-  let count = Math.floor(Math.random() * 11); // 0 to 10
-  elements.activeCount.textContent = count;
-}, 2000);
+  /* Cross-device smooth scroll implementation */
+  function smoothScrollTo(targetY) {
+    const startY = window.pageYOffset || document.documentElement.scrollTop;
+    const distance = targetY - startY;
+    const duration = 400;
+    let start = null;
 
-setInterval(() => {
-  let count = Math.floor(Math.random() * 6) + 10; // 10 to 15
-  elements.activeCount.textContent = count;
-}, 10000);
+    function step(timestamp) {
+      if (!start) start = timestamp;
+      const progress = timestamp - start;
+      const rate = Math.min(progress / duration, 1);
+      const ease = rate < 0.5 ? 2 * rate * rate : -1 + (4 - 2 * rate) * rate;
+      window.scrollTo(0, startY + distance * ease);
+      if (progress < duration) {
+        window.requestAnimationFrame(step);
+      }
+    }
+    window.requestAnimationFrame(step);
+  }
 
-function showToast(message) {
-  clearTimeout(state.toastTimeout);
-  elements.toast.textContent = message;
-  elements.toast.classList.add("visible");
+  function openModal(gridId, serviceType) {
+    activeGridId = gridId;
+    activeServiceType = serviceType;
+    document.getElementById('profileModal').classList.add('active');
+    updateModalPrice();
+  }
 
-  state.toastTimeout = setTimeout(() => {
-    elements.toast.classList.remove("visible");
-  }, 4000);
-}
+  function closeModal() {
+    document.getElementById('profileModal').classList.remove('active');
+    document.getElementById('profName').value = '';
+    document.getElementById('profPlace').value = '';
+    document.getElementById('profRole').value = '';
+    document.getElementById('profApps').value = '';
+    document.getElementById('profExp').value = '';
+    document.getElementById('profPhone').value = '';
+    document.getElementById('profEmail').value = '';
+  }
 
-// Request permission and control phone hardware torch
-async function setHardwareTorch(enable) {
-  if (enable) {
-    try {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        state.mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" }
-        });
-        state.track = state.mediaStream.getVideoTracks()[0];
-        
-        const capabilities = state.track.getCapabilities ? state.track.getCapabilities() : {};
-        if (capabilities.torch) {
-          await state.track.applyConstraints({
-            advanced: [{ torch: true }]
+  function updateModalPrice() {
+    const tier = document.getElementById('profTier').value;
+    const priceTag = document.getElementById('dynamicPriceTag');
+    if (tier === 'gold') {
+      priceTag.innerText = 'Listing Fee: ₹300+ (Gold Tier)';
+      priceTag.style.borderColor = 'var(--gold-color)';
+      priceTag.style.color = 'var(--gold-color)';
+    } else {
+      priceTag.innerText = 'Listing Fee: ₹100+ (Silver Tier)';
+      priceTag.style.borderColor = 'var(--silver-color)';
+      priceTag.style.color = 'var(--silver-color)';
+    }
+  }
+
+  function goHomeFromModal() {
+    closeModal();
+    showPage('home-page');
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.innerText = text;
+    return div.innerHTML;
+  }
+
+  function updateCategoryCounts() {
+    const editorsCount = document.querySelectorAll('#editors-grid .pro-card[data-person-id]').length;
+    const photoCount = document.querySelectorAll('#photo-video-grid .pro-card[data-person-id]').length;
+    const techCount = document.querySelectorAll('#tech-grid .pro-card[data-person-id]').length;
+
+    const edBadge = document.getElementById('editors-count-badge');
+    const photoBadge = document.getElementById('photo-count-badge');
+    const techBadge = document.getElementById('tech-count-badge');
+
+    if (edBadge) edBadge.innerText = `${editorsCount} out of 10`;
+    if (photoBadge) photoBadge.innerText = `${photoCount} out of 10`;
+    if (techBadge) techBadge.innerText = `${techCount} out of 10`;
+
+    updateSavedBadgeCount();
+  }
+
+  function setRating(personId, rating) {
+    const starsContainer = document.getElementById(`stars-${personId}`);
+    if (!starsContainer) return;
+
+    const stars = starsContainer.querySelectorAll('span');
+    stars.forEach((star, index) => {
+      if (index < rating) {
+        star.classList.add('active');
+      } else {
+        star.classList.remove('active');
+      }
+    });
+
+    localStorage.setItem(`user_star_${personId}`, rating);
+    alert(`Thank you for giving ${rating} Star(s)!`);
+  }
+
+  function loadSavedRatings() {
+    const personCards = document.querySelectorAll('.pro-card[data-person-id]');
+    personCards.forEach(card => {
+      const id = card.getAttribute('data-person-id');
+      const savedRating = localStorage.getItem(`user_star_${id}`);
+      if (savedRating) {
+        const starsContainer = card.querySelector(`.interactive-stars`);
+        if (starsContainer) {
+          const stars = starsContainer.querySelectorAll('span');
+          stars.forEach((star, index) => {
+            if (index < parseInt(savedRating)) {
+              star.classList.add('active');
+            }
           });
-          elements.lightSourceText.textContent = "Screen + LED";
-        } else {
-          elements.lightSourceText.textContent = "Screen Only";
         }
       }
-    } catch (err) {
-      console.warn("Torch API error or camera permission denied:", err);
-      elements.lightSourceText.textContent = "Screen Only";
+    });
+  }
+
+  function getBadgeSvg(tier) {
+    if (tier === 'gold') {
+      return `<div class="tier-badge badge-gold"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.5-6.2 4.5 2.4-7.4-6.2-4.5h7.6z"/></svg>Gold</div>`;
+    } else {
+      return `<div class="tier-badge badge-silver"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>Silver</div>`;
     }
-  } else {
-    if (state.track) {
-      try {
-        const capabilities = state.track.getCapabilities ? state.track.getCapabilities() : {};
-        if (capabilities.torch) {
-          await state.track.applyConstraints({
-            advanced: [{ torch: false }]
+  }
+
+  function getSavedProfileIds() {
+    return JSON.parse(localStorage.getItem('saved_profiles') || '[]');
+  }
+
+  function toggleSaveProfile(personId, event) {
+    if (event) event.stopPropagation();
+    let saved = getSavedProfileIds();
+    const index = saved.indexOf(personId);
+
+    if (index > -1) {
+      saved.splice(index, 1);
+    } else {
+      saved.push(personId);
+    }
+
+    localStorage.setItem('saved_profiles', JSON.stringify(saved));
+    updateHeartIcons();
+    updateSavedBadgeCount();
+
+    if (document.getElementById('saved-page').classList.contains('active')) {
+      renderSavedProfiles();
+    }
+  }
+
+  function updateHeartIcons() {
+    const saved = getSavedProfileIds();
+    document.querySelectorAll('.heart-btn').forEach(btn => {
+      const id = btn.getAttribute('data-id');
+      if (saved.includes(id)) {
+        btn.classList.add('saved');
+      } else {
+        btn.classList.remove('saved');
+      }
+    });
+  }
+
+  function updateSavedBadgeCount() {
+    const saved = getSavedProfileIds();
+    const navCount = document.getElementById('saved-nav-count');
+    if (navCount) {
+      navCount.innerText = saved.length;
+    }
+  }
+
+  function renderSavedProfiles() {
+    const savedIds = getSavedProfileIds();
+    const container = document.getElementById('saved-grid');
+    
+    container.innerHTML = `
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+    `;
+
+    setTimeout(() => {
+      container.innerHTML = '';
+
+      if (savedIds.length === 0) {
+        container.innerHTML = `<div class="empty-saved-msg">No saved profiles yet. Click the heart icon on any profile to save it here!</div>`;
+        return;
+      }
+
+      savedIds.forEach(id => {
+        const origCard = document.querySelector(`.pro-card[data-person-id="${id}"]`);
+        if (origCard) {
+          const clone = origCard.cloneNode(true);
+          const heartBtn = clone.querySelector('.heart-btn');
+          if (heartBtn) {
+            heartBtn.onclick = (e) => toggleSaveProfile(id, e);
+          }
+          const stars = clone.querySelectorAll('.interactive-stars span');
+          stars.forEach((star, idx) => {
+            star.onclick = () => setRating(id, idx + 1);
           });
+
+          container.appendChild(clone);
         }
-      } catch (e) {}
-      state.track.stop();
-      state.track = null;
+      });
+      updateHeartIcons();
+    }, 400);
+  }
+
+  function filterTier(pageId, gridId, tier) {
+    currentFilters[pageId] = tier;
+
+    const pageElem = document.getElementById(pageId);
+    const tabs = pageElem.querySelectorAll('.filter-tab');
+    tabs.forEach(tab => {
+      if (tab.getAttribute('data-tier') === tier) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+
+    const grid = document.getElementById(gridId);
+    const cards = grid.querySelectorAll('.pro-card[data-person-id]');
+    cards.forEach(card => {
+      const cardTier = card.getAttribute('data-tier') || 'silver';
+      if (tier === 'all' || cardTier === tier) {
+        card.style.display = 'flex';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+
+  function addProfileToGrid(
+    name,
+    place,
+    role,
+    apps,
+    exp,
+    phone,
+    gridId,
+    serviceType,
+    tier = 'silver',
+    photoUrl = 'https://upload.wikimedia.org/wikipedia/commons/2/26/Cristiano_Ronaldo_Croatia_v_Portugal_2_July_2026-075_%28cropped%29.jpg?utm_source=findshny&utm_campaign=index&utm_content=original'
+  ) {
+    const personId = 'user-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    const encodedMsg = encodeURIComponent(`Hi ${name}, I need ${serviceType}`);
+    const waUrl = `https://api.whatsapp.com/send?phone=${encodeURIComponent(phone)}&text=${encodedMsg}`;
+
+    const appsList = apps.split(',').map(app => `<span>${escapeHtml(app.trim())}</span>`).join('');
+    const badgeHtml = getBadgeSvg(tier);
+
+    const newCard = document.createElement('div');
+    newCard.className = `pro-card`;
+    newCard.setAttribute('data-person-id', personId);
+    newCard.setAttribute('data-tier', tier);
+    newCard.innerHTML = `
+      ${badgeHtml}
+      <button class="heart-btn" data-id="${personId}" onclick="toggleSaveProfile('${personId}', event)" title="Save Profile">
+        <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </button>
+      <div class="pro-card-header">
+        <div class="profile-header-flex">
+          <img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(name)}" class="hemin-photo-img" onclick="openImageModal('${escapeHtml(photoUrl)}')">
+          <div class="pro-info">
+            <h3>${escapeHtml(name)}</h3>
+            <div class="place">📍 ${escapeHtml(place)}</div>
+            <div class="role">${escapeHtml(role)}</div>
+            <div class="exp">${escapeHtml(exp)}</div>
+          </div>
+        </div>
+        <a href="${waUrl}" class="wa-btn" target="_blank">Chat</a>
+      </div>
+      <div class="apps-section">
+        <div class="apps-section-title">Software / Apps</div>
+        <div class="pro-apps">${appsList}</div>
+      </div>
+      <div class="rating-section">
+        <span class="rating-title">Rate Profile:</span>
+        <div class="rating-stars interactive-stars" id="stars-${personId}">
+          <span onclick="setRating('${personId}', 1)">★</span>
+          <span onclick="setRating('${personId}', 2)">★</span>
+          <span onclick="setRating('${personId}', 3)">★</span>
+          <span onclick="setRating('${personId}', 4)">★</span>
+          <span onclick="setRating('${personId}', 5)">★</span>
+        </div>
+      </div>
+    `;
+    const targetGrid = document.getElementById(gridId);
+    if (targetGrid) {
+      targetGrid.appendChild(newCard);
+      updateCategoryCounts();
+      initHoverStars(newCard);
+      updateHeartIcons();
     }
-    if (state.mediaStream) {
-      state.mediaStream.getTracks().forEach(t => t.stop());
-      state.mediaStream = null;
-    }
-  }
-}
-
-function updateBrightness() {
-  const brightness = Number(elements.brightness.value);
-  elements.brightnessValue.value = `${brightness}%`;
-
-  const opacity = state.on ? 0.55 + brightness * 0.0045 : 0;
-
-  document.documentElement.style.setProperty(
-    "--beam-opacity",
-    String(opacity)
-  );
-}
-
-function updateTimer() {
-  const seconds = state.startedAt === null
-    ? 0
-    : Math.floor((performance.now() - state.startedAt) / 1000);
-
-  const minutesText = String(Math.floor(seconds / 60)).padStart(2, "0");
-  const secondsText = String(seconds % 60).padStart(2, "0");
-
-  elements.timer.textContent = `${minutesText}:${secondsText}`;
-}
-
-function render() {
-  document.body.classList.toggle("is-on", state.on);
-  elements.power.setAttribute("aria-pressed", String(state.on));
-  elements.power.setAttribute(
-    "aria-label",
-    !state.on
-      ? "Turn flashlight on"
-      : state.unlocked
-      ? "Turn flashlight off"
-      : "View demo unlock for the main off button"
-  );
-
-  elements.powerLabel.textContent = state.on ? "TURN OFF" : "TURN ON";
-  elements.badge.textContent = state.on ? "LIGHT ACTIVE" : "STANDBY";
-  elements.access.textContent = state.unlocked ? "Unlocked" : "Locked";
-  elements.access.style.color = state.unlocked ? "var(--accent)" : "";
-  elements.emergency.hidden = !state.on;
-
-  elements.safetyHint.textContent = state.on
-    ? "Press Esc to turn OFF for free."
-    : "Camera permission unlocks rear LED flash.";
-
-  elements.instruction.textContent = state.on
-    ? state.unlocked
-      ? "Your flashlight is glowing. Tap the power button to turn OFF."
-      : "Light is ON. Tap OFF for the $50 demo unlock, or use free Emergency OFF."
-    : state.unlocked
-    ? "Demo unlock active. Your main power button is now fully unlocked."
-    : "Tap to light up. Main OFF unlock: $50 demo. Emergency OFF is always free.";
-
-  updateBrightness();
-}
-
-function resetPaymentButton() {
-  state.processing = false;
-  elements.pay.disabled = false;
-  elements.pay.removeAttribute("aria-busy");
-  elements.pay.textContent = "Pay $50 to unlock OFF Demo";
-}
-
-function cancelPendingUnlock() {
-  clearTimeout(state.paymentTimeout);
-  state.paymentTimeout = null;
-  resetPaymentButton();
-}
-
-function closeDialog() {
-  cancelPendingUnlock();
-  if (elements.dialog.open) elements.dialog.close();
-}
-
-async function turnOn() {
-  state.on = true;
-  state.startedAt = performance.now();
-
-  clearInterval(state.timerInterval);
-  state.timerInterval = setInterval(updateTimer, 1000);
-
-  updateTimer();
-  render();
-  await setHardwareTorch(true);
-}
-
-async function turnOff(emergency = false) {
-  closeDialog();
-  state.on = false;
-
-  await setHardwareTorch(false);
-
-  clearInterval(state.timerInterval);
-  state.timerInterval = null;
-
-  updateTimer();
-  state.startedAt = null;
-
-  render();
-  elements.power.focus();
-
-  showToast(
-    emergency
-      ? "Light turned OFF for free. You're always in control."
-      : "Light OFF. See you on the bright side."
-  );
-}
-
-elements.power.addEventListener("click", () => {
-  if (!state.on) {
-    turnOn();
-    return;
   }
 
-  if (state.unlocked) {
-    turnOff();
-    return;
-  }
+  function submitProfileForApproval() {
+    const tier = document.getElementById('profTier').value;
+    const name = document.getElementById('profName').value.trim();
+    const place = document.getElementById('profPlace').value.trim();
+    const role = document.getElementById('profRole').value.trim();
+    const apps = document.getElementById('profApps').value.trim() || 'Editing Apps';
+    const exp = document.getElementById('profExp').value.trim() || '1 Year Experience';
+    const phone = document.getElementById('profPhone').value.trim();
+    const applicantEmail = document.getElementById('profEmail').value.trim();
 
-  if (!elements.dialog.open) {
-    elements.dialog.showModal();
-  }
-});
+    let feeText = '₹100+';
+    if (tier === 'gold') feeText = '₹300+';
 
-elements.brightness.addEventListener("input", updateBrightness);
-
-elements.emergency.addEventListener("click", () => turnOff(true));
-elements.modalEmergency.addEventListener("click", () => turnOff(true));
-elements.back.addEventListener("click", closeDialog);
-
-elements.pay.addEventListener("click", () => {
-  if (state.processing) return;
-
-  state.processing = true;
-  elements.pay.disabled = true;
-  elements.pay.setAttribute("aria-busy", "true");
-  elements.pay.textContent = "Simulating unlock… No charge";
-
-  state.paymentTimeout = setTimeout(() => {
-    if (!elements.dialog.open || !state.on) {
-      cancelPendingUnlock();
+    if (!name || !place || !role || !phone || !applicantEmail) {
+      alert('Please fill in all required fields.');
       return;
     }
 
-    state.unlocked = true;
-    closeDialog();
-    render();
+    const waText = encodeURIComponent(
+      `*NEW PROFILE APPLICATION (FindShny)*\n\n` +
+      `*Selected Badge Tier:* ${tier.toUpperCase()}\n` +
+      `*Name:* ${name}\n` +
+      `*Location:* ${place}\n` +
+      `*Role:* ${role}\n` +
+      `*Apps/Software:* ${apps}\n` +
+      `*Experience:* ${exp}\n` +
+      `*Category:* ${activeServiceType}\n` +
+      `*Phone:* ${phone}\n` +
+      `*Email:* ${applicantEmail}\n` +
+      `*Fee Plan:* ${feeText}\n\n` +
+      `*Decision:* Approve or Reject profile listing.`
+    );
+    const adminWaUrl = `https://api.whatsapp.com/send?phone=${adminWhatsApp}&text=${waText}`;
 
-    showToast("Demo unlocked! $0 charged. Tap OFF whenever you're ready.");
-  }, 1000);
-});
-
-elements.dialog.addEventListener("cancel", (event) => {
-  event.preventDefault();
-  turnOff(true);
-});
-
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && state.on) {
-    event.preventDefault();
-    turnOff(true);
+    alert("Thank you! Your profile submission and tier details are being sent to administration.");
+    closeModal();
+    window.open(adminWaUrl, '_blank');
   }
-});
 
-render();
+  function initParticleCanvas() {
+    const canvas = document.createElement('canvas');
+    canvas.id = 'bg-canvas';
+    canvas.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:-1;opacity:0.4;';
+    document.body.prepend(canvas);
+
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    for (let i = 0; i < 45; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 2 + 1,
+        dx: (Math.random() - 0.5) * 0.5,
+        dy: (Math.random() - 0.5) * 0.5
+      });
+    }
+
+    function drawParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#38BDF8';
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+        p.x += p.dx;
+        p.y += p.dy;
+        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+      });
+      requestAnimationFrame(drawParticles);
+    }
+    drawParticles();
+  }
+
+  function initFallingLogos() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const layer = document.createElement('div');
+    layer.className = 'falling-logos';
+    layer.setAttribute('aria-hidden', 'true');
+    document.body.prepend(layer);
+
+    const logoTypes = [
+      {
+        className: 'premiere-logo',
+        svg: '<svg viewBox="0 0 48 48" aria-label="Adobe Premiere Pro"><defs><linearGradient id="pr-gradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2D0B4E"/><stop offset="0.55" stop-color="#5B1D8D"/><stop offset="1" stop-color="#A23BFF"/></linearGradient></defs><rect x="2" y="2" width="44" height="44" rx="7" fill="url(#pr-gradient)"/><rect x="4" y="4" width="40" height="40" rx="5" fill="none" stroke="#E6B7FF" stroke-opacity=".35"/><text x="24" y="31" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="-1" fill="#FFF">Pr</text><circle cx="37" cy="11" r="2" fill="#FF7AE5"/></svg>'
+      },
+      {
+        className: 'windows-logo',
+        svg: '<svg viewBox="0 0 48 48" aria-label="Windows"><defs><linearGradient id="windows-gradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00A4EF"/><stop offset="0.52" stop-color="#087CD1"/><stop offset="1" stop-color="#0050A4"/></linearGradient></defs><path d="M4 8 22 5v18H4V8Zm22-4 20-3v22H26V4ZM4 27h18v18L4 42V27Zm22 0h20v22l-20-3V27Z" fill="url(#windows-gradient)"/><path d="M24 5v39M5 25h38" stroke="#D9F3FF" stroke-opacity=".45" stroke-width="1"/></svg>'
+      },
+      {
+        className: 'ubuntu-logo',
+        svg: '<svg viewBox="0 0 48 48" aria-label="Ubuntu"><defs><radialGradient id="ubuntu-gradient" cx="32%" cy="25%" r="80%"><stop offset="0" stop-color="#FF8A50"/><stop offset="0.48" stop-color="#E95420"/><stop offset="1" stop-color="#A83212"/></radialGradient></defs><circle cx="24" cy="24" r="21" fill="url(#ubuntu-gradient)"/><path d="M24 10a14 14 0 1 1-12.1 21M12 31l8-1M38 31l-5-7M24 10l-3 8" fill="none" stroke="#FFF" stroke-width="2.7" stroke-linecap="round"/><circle cx="24" cy="10" r="3.2" fill="#FFF"/><circle cx="12" cy="31" r="3.2" fill="#FFF"/><circle cx="38" cy="31" r="3.2" fill="#FFF"/></svg>'
+      },
+      {
+        className: 'davinci-logo',
+        svg: '<svg viewBox="0 0 48 48" aria-label="DaVinci Resolve"><defs><linearGradient id="resolve-red" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF6B6B"/><stop offset="1" stop-color="#C51F4A"/></linearGradient><linearGradient id="resolve-green" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7BE495"/><stop offset="1" stop-color="#16A05D"/></linearGradient><linearGradient id="resolve-blue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#65D9FF"/><stop offset="1" stop-color="#2176D2"/></linearGradient></defs><path d="M24 3 43 18H5L24 3Z" fill="url(#resolve-green)"/><path d="M5 22h38L24 45 5 22Z" fill="url(#resolve-blue)"/><path d="M5 18h38L24 31 5 18Z" fill="url(#resolve-red)"/><circle cx="24" cy="22" r="4.2" fill="#FFF"/><circle cx="24" cy="22" r="2" fill="#263238"/></svg>'
+      }
+    ];
+
+    const logos = [];
+    const minGap = 62;
+    const logoSize = 46;
+
+    function findOpenX(y) {
+      for (let attempt = 0; attempt < 80; attempt++) {
+        const x = Math.random() * Math.max(1, window.innerWidth - logoSize);
+        const clear = logos.every(logo =>
+          Math.abs(x - logo.x) >= minGap || Math.abs(y - logo.y) >= minGap
+        );
+        if (clear) return x;
+      }
+      return Math.random() * Math.max(1, window.innerWidth - logoSize);
+    }
+
+    const logoCount = Math.min(18, Math.max(10, Math.floor(window.innerWidth / 82)));
+    for (let index = 0; index < logoCount; index++) {
+      const type = logoTypes[index % logoTypes.length];
+      const element = document.createElement('div');
+      element.className = `falling-logo ${type.className}`;
+      element.innerHTML = type.svg;
+      layer.appendChild(element);
+
+      const y = Math.random() * Math.max(1, window.innerHeight - logoSize);
+      logos.push({
+        element,
+        x: findOpenX(y),
+        y,
+        speed: 0.012 + Math.random() * 0.009,
+        drift: (Math.random() - 0.5) * 0.012,
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+
+    let lastTime = performance.now();
+    function animateFallingLogos(now) {
+      const elapsed = Math.min(40, now - lastTime);
+      lastTime = now;
+
+      logos.forEach(logo => {
+        logo.y += logo.speed * elapsed;
+        logo.x += logo.drift * elapsed + Math.sin(now * 0.0007 + logo.phase) * 0.08;
+
+        if (logo.x < 0 || logo.x > window.innerWidth - logoSize) {
+          logo.x = Math.max(0, Math.min(window.innerWidth - logoSize, logo.x));
+          logo.drift *= -1;
+        }
+
+        if (logo.y > window.innerHeight + logoSize) {
+          logo.y = -logoSize - Math.random() * 180;
+          logo.x = findOpenX(logo.y);
+        }
+      });
+
+      for (let first = 0; first < logos.length; first++) {
+        for (let second = first + 1; second < logos.length; second++) {
+          const a = logos[first];
+          const b = logos[second];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+
+          if (Math.abs(dx) < minGap && Math.abs(dy) < minGap) {
+            const direction = dx === 0 ? (first % 2 === 0 ? -1 : 1) : Math.sign(dx);
+            const push = (minGap - Math.abs(dx)) * 0.045;
+            a.x -= direction * push;
+            b.x += direction * push;
+            a.drift -= direction * 0.0012;
+            b.drift += direction * 0.0012;
+          }
+        }
+      }
+
+      logos.forEach(logo => {
+        logo.element.style.transform = `translate3d(${logo.x}px, ${logo.y}px, 0)`;
+      });
+      requestAnimationFrame(animateFallingLogos);
+    }
+
+    requestAnimationFrame(animateFallingLogos);
+  }
+
+  function initHoverStars(container = document) {
+    const starGroups = container.querySelectorAll('.interactive-stars');
+    starGroups.forEach(group => {
+      const stars = Array.from(group.querySelectorAll('span'));
+      stars.forEach((star, index) => {
+        star.addEventListener('mouseenter', () => {
+          stars.forEach((s, idx) => {
+            s.style.color = idx <= index ? 'var(--star-gold)' : '#475569';
+          });
+        });
+      });
+      group.addEventListener('mouseleave', () => {
+        stars.forEach(s => s.style.color = '');
+      });
+    });
+  }
+
+  function initScrollEnhancements() {
+    const progressBar = document.createElement('div');
+    progressBar.style.cssText = 'position:fixed;top:0;left:0;height:3px;background:var(--brass);z-index:1001;width:0%;transition:width 0.1s;';
+    document.body.appendChild(progressBar);
+
+    const scrollTopBtn = document.createElement('button');
+    scrollTopBtn.innerHTML = '↑';
+    scrollTopBtn.style.cssText = 'position:fixed;bottom:20px;right:20px;width:44px;height:44px;font-size:1.2rem;border-radius:50%;background:var(--brass);color:#0B132B;border:none;font-weight:bold;cursor:pointer;display:none;z-index:999;box-shadow:0 6px 16px rgba(0,0,0,0.4);transition:transform 0.2s ease;';
+    document.body.appendChild(scrollTopBtn);
+
+    scrollTopBtn.addEventListener('click', () => {
+      smoothScrollTo(0);
+    });
+
+    window.addEventListener('scroll', () => {
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = (window.scrollY / totalScroll) * 100;
+      progressBar.style.width = `${progress}%`;
+
+      scrollTopBtn.style.display = window.scrollY > 300 ? 'block' : 'none';
+    });
+  }
+
+  function showToast(message, tone = 'info') {
+    let stack = document.querySelector('.toast-stack');
+    if (!stack) {
+      stack = document.createElement('div');
+      stack.className = 'toast-stack';
+      document.body.appendChild(stack);
+    }
+    const toast = document.createElement('div');
+    toast.className = `site-toast ${tone}`;
+    toast.textContent = message;
+    stack.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(8px)';
+      setTimeout(() => toast.remove(), 250);
+    }, 3200);
+  }
+
+  function initThemeToggle(button) {
+    let theme = localStorage.getItem('site_theme') || 'dark';
+    const applyTheme = () => {
+      document.body.classList.toggle('is-light', theme === 'light');
+      button.textContent = theme === 'light' ? 'Dark' : 'Light';
+      button.setAttribute('aria-label', `Switch to ${theme === 'light' ? 'dark' : 'light'} mode`);
+    };
+    button.addEventListener('click', () => {
+      theme = theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('site_theme', theme);
+      applyTheme();
+      showToast(`${theme === 'light' ? 'Light' : 'Dark'} mode enabled`, 'success');
+    });
+    applyTheme();
+  }
+
+  function initSearchPalette(searchButton) {
+    const overlay = document.createElement('div');
+    overlay.className = 'site-search-overlay';
+    overlay.innerHTML = '<div class="site-search-panel"><input class="site-search-input" type="search" placeholder="Search services, profiles, or skills..." aria-label="Search website"><div class="site-search-results"></div></div>';
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector('.site-search-input');
+    const results = overlay.querySelector('.site-search-results');
+
+    function renderResults(query = '') {
+      const term = query.trim().toLowerCase();
+      const items = Array.from(document.querySelectorAll('.card, .pro-card, .creator-card'))
+        .filter(item => !term || item.textContent.toLowerCase().includes(term));
+      results.innerHTML = '';
+      if (!items.length) {
+        results.innerHTML = '<div class="site-search-empty">No matching service or profile found.</div>';
+        return;
+      }
+      items.slice(0, 18).forEach(item => {
+        const result = document.createElement('button');
+        result.className = 'site-search-result';
+        result.textContent = item.textContent.replace(/\s+/g, ' ').trim().slice(0, 120);
+        result.addEventListener('click', () => {
+          const page = item.closest('.page');
+          if (page && !page.classList.contains('active')) showPage(page.id);
+          overlay.classList.remove('active');
+          setTimeout(() => item.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
+        });
+        results.appendChild(result);
+      });
+    }
+
+    const open = () => {
+      overlay.classList.add('active');
+      input.value = '';
+      renderResults();
+      setTimeout(() => input.focus(), 0);
+    };
+    searchButton.addEventListener('click', open);
+    input.addEventListener('input', () => renderResults(input.value));
+    overlay.addEventListener('click', event => {
+      if (event.target === overlay) overlay.classList.remove('active');
+    });
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Escape') overlay.classList.remove('active');
+    });
+    window.openSiteSearch = open;
+  }
+
+  function initRevealAnimations() {
+    document.body.classList.add('js-enhanced');
+    const revealItems = document.querySelectorAll('.card, .pro-card, .creator-card, .hero, .cat-heading');
+    revealItems.forEach((item, index) => {
+      item.classList.add('reveal-on-scroll');
+      item.style.transitionDelay = `${Math.min(index % 5, 4) * 45}ms`;
+    });
+    if (!('IntersectionObserver' in window)) {
+      revealItems.forEach(item => item.classList.add('is-visible'));
+      return;
+    }
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08 });
+    revealItems.forEach(item => observer.observe(item));
+  }
+
+  function initCardSpotlight() {
+    document.querySelectorAll('.card, .pro-card, .creator-card').forEach(card => {
+      card.classList.add('spotlight-card');
+      card.addEventListener('pointermove', event => {
+        if (event.pointerType === 'touch') return;
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty('--spot-x', `${event.clientX - rect.left}px`);
+        card.style.setProperty('--spot-y', `${event.clientY - rect.top}px`);
+      });
+    });
+  }
+
+  function initShareButton(button) {
+    button.addEventListener('click', async () => {
+      const shareData = { title: document.title, text: 'Explore FindShny services and specialists.', url: window.location.href };
+      try {
+        if (navigator.share) {
+          await navigator.share(shareData);
+        } else if (navigator.clipboard) {
+          await navigator.clipboard.writeText(window.location.href);
+          showToast('Website link copied to clipboard', 'success');
+        } else {
+          showToast('Copy this page link from your browser address bar');
+        }
+      } catch (error) {
+        if (error.name !== 'AbortError') showToast('Sharing was not available on this device', 'warning');
+      }
+    });
+  }
+
+  function initKeyboardShortcuts() {
+    document.addEventListener('keydown', event => {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (event.key.toLowerCase() === 'h') {
+        showPage('home-page');
+      } else if (event.key.toLowerCase() === 's') {
+        showPage('saved-page');
+      } else if (event.key === 'Escape') {
+        document.querySelector('.site-search-overlay')?.classList.remove('active');
+        closeImageModal();
+      }
+    });
+  }
+
+  function initNetworkStatus() {
+    const report = () => showToast(navigator.onLine ? 'Connection restored' : 'You are offline; saved profiles still work', navigator.onLine ? 'success' : 'warning');
+    window.addEventListener('online', report);
+    window.addEventListener('offline', report);
+  }
+
+  function initDraftAutosave() {
+    const modal = document.getElementById('profileModal');
+    const ids = ['profTier', 'profName', 'profPlace', 'profRole', 'profApps', 'profExp', 'profPhone', 'profEmail'];
+    const status = document.createElement('div');
+    status.className = 'draft-status';
+    status.textContent = 'Draft saved locally';
+    document.body.appendChild(status);
+    let loaded = false;
+    const save = () => {
+      const draft = {};
+      ids.forEach(id => { draft[id] = document.getElementById(id)?.value || ''; });
+      localStorage.setItem('profile_draft', JSON.stringify(draft));
+      status.classList.add('visible');
+      clearTimeout(status.hideTimer);
+      status.hideTimer = setTimeout(() => status.classList.remove('visible'), 1500);
+    };
+    const load = () => {
+      if (loaded) return;
+      try {
+        const draft = JSON.parse(localStorage.getItem('profile_draft') || 'null');
+        if (draft) ids.forEach(id => { if (draft[id] && document.getElementById(id)) document.getElementById(id).value = draft[id]; });
+      } catch (error) { }
+      loaded = true;
+    };
+    ids.forEach(id => document.getElementById(id)?.addEventListener('input', save));
+    new MutationObserver(() => {
+      if (modal.classList.contains('active')) load();
+      else loaded = false;
+    }).observe(modal, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  function initCountPulse() {
+    const badges = document.querySelectorAll('.profile-count-badge, .nav-badge');
+    const observer = new MutationObserver(changes => {
+      changes.forEach(change => {
+        change.target.classList.remove('count-pulse');
+        void change.target.offsetWidth;
+        change.target.classList.add('count-pulse');
+      });
+    });
+    badges.forEach(badge => observer.observe(badge, { childList: true, characterData: true, subtree: true }));
+  }
+
+  function initEnhancementToolbar() {
+    const wrap = document.querySelector('header .wrap');
+    if (!wrap) return;
+    const toolbar = document.createElement('div');
+    toolbar.className = 'enhanced-toolbar';
+    toolbar.innerHTML = '<button class="enhanced-control theme-control" type="button">Mode</button>';
+    wrap.appendChild(toolbar);
+    initThemeToggle(toolbar.querySelector('.theme-control'));
+  }
+
+  function initToastFeedback() {
+    document.addEventListener('click', event => {
+      if (event.target.closest('.heart-btn')) showToast('Saved profile list updated', 'success');
+      if (event.target.closest('.saved-nav-btn')) setTimeout(() => showToast('Showing your saved profiles'), 250);
+    });
+  }
+
+  function initTetrisBackdrop() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'tetris-backdrop';
+    canvas.setAttribute('aria-hidden', 'true');
+    document.body.prepend(canvas);
+    const ctx = canvas.getContext('2d');
+    const cycleDuration = 30000;
+    const clearDuration = 1600;
+    const fadeDuration = 1000;
+    const pieces = [
+      { shape: [[1, 1, 1, 1]], color: '#C76532' },
+      { shape: [[1, 1], [1, 1]], color: '#A63F1F' },
+      { shape: [[0, 1, 0], [1, 1, 1]], color: '#D8793E' },
+      { shape: [[1, 0, 0], [1, 1, 1]], color: '#B55324' },
+      { shape: [[0, 1, 1], [1, 1, 0]], color: '#E58B4A' },
+      { shape: [[1, 1, 0], [0, 1, 1]], color: '#923016' }
+    ];
+    const brickPalette = ['#E04424', '#C52D19', '#F05A2A', '#B91C12', '#FF7043', '#8F160D', '#D9361E'];
+    let dpr = 1;
+    let cellSize = 40;
+    let columns = 12;
+    let rows = 16;
+    let board = [];
+    let activePiece = null;
+    let cycleStart = performance.now();
+    let nextSpawn = cycleStart + 400;
+    let previousTime = cycleStart;
+
+    function resetBoard() {
+      board = Array.from({ length: rows }, () => Array(columns).fill(null));
+    }
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cellSize = Math.max(54, Math.min(76, Math.round(window.innerWidth / 12)));
+      columns = Math.max(8, Math.floor(window.innerWidth / cellSize));
+      rows = Math.max(12, Math.ceil(window.innerHeight / cellSize));
+      resetBoard();
+      activePiece = null;
+    }
+
+    function collides(piece, x, y) {
+      const row = Math.floor(y);
+      return piece.shape.some((line, sy) => line.some((filled, sx) => {
+        if (!filled) return false;
+        const boardX = x + sx;
+        const boardY = row + sy;
+        return boardX < 0 || boardX >= columns || boardY >= rows || (boardY >= 0 && board[boardY][boardX]);
+      }));
+    }
+
+    function spawnPiece() {
+      const template = pieces[Math.floor(Math.random() * pieces.length)];
+      const shape = template.shape.map(line => [...line]);
+      return {
+        shape,
+        color: brickPalette[Math.floor(Math.random() * brickPalette.length)],
+        x: Math.floor(Math.random() * Math.max(1, columns - shape[0].length + 1)),
+        y: -shape.length,
+        speed: 0.0028 + Math.random() * 0.0014
+      };
+    }
+
+    function settleBoard() {
+      for (let x = 0; x < columns; x++) {
+        let writeRow = rows - 1;
+        for (let readRow = rows - 1; readRow >= 0; readRow--) {
+          if (board[readRow][x]) board[writeRow--][x] = board[readRow][x];
+        }
+        while (writeRow >= 0) board[writeRow--][x] = null;
+      }
+    }
+
+    function lockPiece() {
+      const row = Math.floor(activePiece.y);
+      activePiece.shape.forEach((line, sy) => line.forEach((filled, sx) => {
+        const boardY = row + sy;
+        const boardX = activePiece.x + sx;
+        if (filled && boardY >= 0 && boardY < rows && boardX >= 0 && boardX < columns) {
+          board[boardY][boardX] = { color: activePiece.color };
+        }
+      }));
+
+      settleBoard();
+      const completeRows = board.filter(line => line.every(Boolean)).length;
+      if (completeRows) {
+        board = board.filter(line => !line.every(Boolean));
+        while (board.length < rows) board.unshift(Array(columns).fill(null));
+        settleBoard();
+      }
+      activePiece = null;
+    }
+
+    function drawBlock(x, y, block, alpha = 0.7) {
+      const px = x * cellSize + 2;
+      const py = y * cellSize + 2;
+      const size = cellSize - 7;
+      const cut = Math.max(5, size * 0.12);
+      const variant = Math.abs(x * 7 + y * 11) % 4;
+      const path = new Path2D();
+      if (variant === 0) {
+        path.moveTo(px + cut, py);
+        path.lineTo(px + size - cut, py);
+        path.lineTo(px + size, py + cut);
+        path.lineTo(px + size, py + size - cut);
+        path.lineTo(px + size - cut, py + size);
+        path.lineTo(px + cut, py + size);
+        path.lineTo(px, py + size - cut);
+        path.lineTo(px, py + cut);
+      } else if (variant === 1) {
+        path.moveTo(px, py + cut);
+        path.lineTo(px + cut, py);
+        path.lineTo(px + size, py);
+        path.lineTo(px + size, py + size - cut);
+        path.lineTo(px + size - cut, py + size);
+        path.lineTo(px, py + size);
+      } else if (variant === 2) {
+        path.moveTo(px + cut, py);
+        path.lineTo(px + size, py);
+        path.lineTo(px + size, py + size - cut);
+        path.lineTo(px + size - cut, py + size);
+        path.lineTo(px, py + size);
+        path.lineTo(px, py + cut);
+      } else {
+        path.moveTo(px, py);
+        path.lineTo(px + size - cut, py);
+        path.lineTo(px + size, py + cut);
+        path.lineTo(px + size - cut * 0.45, py + size);
+        path.lineTo(px + cut, py + size);
+        path.lineTo(px, py + size - cut);
+      }
+      path.closePath();
+      ctx.globalAlpha = alpha;
+      ctx.save();
+      ctx.shadowColor = 'rgba(255, 38, 18, 0.72)';
+      ctx.shadowBlur = Math.max(8, size * 0.16);
+      ctx.fillStyle = block.color;
+      ctx.fill(path);
+      ctx.shadowBlur = 0;
+      const brickGradient = ctx.createLinearGradient(px, py, px, py + size);
+      brickGradient.addColorStop(0, '#FF9A72');
+      brickGradient.addColorStop(0.12, block.color);
+      brickGradient.addColorStop(0.78, block.color);
+      brickGradient.addColorStop(1, '#6E1008');
+      ctx.clip(path);
+      ctx.fillStyle = brickGradient;
+      ctx.fillRect(px, py, size, size);
+      ctx.fillStyle = 'rgba(255, 224, 190, 0.24)';
+      ctx.fillRect(px, py, size, Math.max(4, size * 0.1));
+      ctx.fillStyle = 'rgba(55, 19, 10, 0.28)';
+      ctx.fillRect(px, py + size - Math.max(5, size * 0.12), size, Math.max(4, size * 0.1));
+      ctx.strokeStyle = 'rgba(255, 190, 160, 0.7)';
+      ctx.lineWidth = Math.max(1.2, size * 0.02);
+      ctx.stroke(path);
+      ctx.strokeStyle = 'rgba(65, 22, 12, 0.26)';
+      ctx.lineWidth = Math.max(1, size * 0.018);
+      for (let mark = 0; mark < 4; mark++) {
+        const markX = px + size * (0.18 + mark * 0.2);
+        const markY = py + size * (0.34 + ((x * 7 + y * 11 + mark * 13) % 28) / 100);
+        ctx.beginPath();
+        ctx.moveTo(markX, markY);
+        ctx.lineTo(markX + size * 0.08, markY - size * 0.018);
+        ctx.stroke();
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
+    function drawScene() {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      ctx.strokeStyle = 'rgba(148,163,184,0.055)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= columns; x++) {
+        ctx.beginPath();
+        ctx.moveTo(x * cellSize, 0);
+        ctx.lineTo(x * cellSize, rows * cellSize);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= rows; y++) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * cellSize);
+        ctx.lineTo(columns * cellSize, y * cellSize);
+        ctx.stroke();
+      }
+      board.forEach((line, y) => line.forEach((block, x) => {
+        if (block) drawBlock(x, y, block, 0.42);
+      }));
+      if (activePiece) {
+        activePiece.shape.forEach((line, sy) => line.forEach((filled, sx) => {
+          if (filled && activePiece.y + sy >= 0) drawBlock(activePiece.x + sx, Math.floor(activePiece.y) + sy, activePiece, 0.78);
+        }));
+      }
+    }
+
+    function animate(now) {
+      const elapsed = now - cycleStart;
+      const delta = Math.min(40, now - previousTime);
+      previousTime = now;
+      if (elapsed >= cycleDuration + clearDuration) {
+        cycleStart = now;
+        nextSpawn = now + 400;
+        board = [];
+        activePiece = null;
+        resetBoard();
+      }
+      const cycleTime = now - cycleStart;
+      if (cycleTime >= cycleDuration - fadeDuration) {
+        canvas.style.opacity = `${Math.max(0, 0.5 * (cycleDuration - cycleTime) / fadeDuration)}`;
+      } else {
+        canvas.style.opacity = '0.5';
+      }
+      if (cycleTime < cycleDuration) {
+        if (!activePiece && now >= nextSpawn) {
+          activePiece = spawnPiece();
+          nextSpawn = now + 480 + Math.random() * 280;
+        }
+        if (activePiece) {
+          const nextY = activePiece.y + activePiece.speed * delta;
+          if (collides(activePiece, activePiece.x, nextY)) lockPiece();
+          else activePiece.y = nextY;
+        }
+      }
+      drawScene();
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    requestAnimationFrame(animate);
+  }
+
+  function initIntroVideoPlayer() {
+    const overlay = document.getElementById('fullscreen-video-overlay');
+    const iframe = document.getElementById('intro-vimeo-iframe');
+    if (!overlay || !iframe) return;
+
+    const hideOverlay = () => {
+      overlay.classList.add('video-hidden');
+      setTimeout(() => {
+        overlay.remove();
+      }, 600);
+    };
+
+    if (window.Vimeo && window.Vimeo.Player) {
+      const player = new Vimeo.Player(iframe);
+      
+      player.setMuted(true).then(() => {
+        return player.play();
+      }).catch(err => {
+        console.warn('Autoplay failed:', err);
+      });
+
+      player.on('ended', hideOverlay);
+      player.on('error', hideOverlay);
+    } else {
+      setTimeout(hideOverlay, 10000);
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    initIntroVideoPlayer();
+
+    if (!localStorage.getItem('saved_profiles')) {
+      localStorage.setItem('saved_profiles', JSON.stringify([]));
+    }
+
+    loadSavedRatings();
+    updateCategoryCounts();
+    updateHeartIcons();
+
+    initParticleCanvas();
+    initTetrisBackdrop();
+    initHoverStars();
+    initScrollEnhancements();
+    initEnhancementToolbar();
+    initRevealAnimations();
+    initCardSpotlight();
+    initKeyboardShortcuts();
+    initNetworkStatus();
+    initDraftAutosave();
+    initCountPulse();
+    initToastFeedback();
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('accept') === 'true') {
+      const name = params.get('name');
+      const place = params.get('place') || 'Kerala';
+      const role = params.get('role');
+      const apps = params.get('apps') || 'CapCut, Lightroom';
+      const exp = params.get('exp') || '1 Year Experience';
+      const phone = params.get('phone');
+      const tier = params.get('tier') || 'silver';
+      const grid = params.get('grid') || 'editors-grid';
+      const service = params.get('service') || 'Editing';
+
+      if (name && role && phone) {
+        addProfileToGrid(name, place, role, apps, exp, phone, grid, service, tier);
+        alert(`Profile for ${name} (${tier.toUpperCase()} Tier) has been published!`);
+      }
+    }
+  });
 </script>
+</head>
+<body>
+
+<!-- Full Screen Overlay Video -->
+<div id="fullscreen-video-overlay">
+  <div class="video-container-wrapper">
+    <iframe id="intro-vimeo-iframe" src="https://player.vimeo.com/video/1234049959?autoplay=1&amp;muted=1&amp;autopause=0&amp;controls=0&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;app_id=58479" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" referrerpolicy="strict-origin-when-cross-origin" title="Scene"></iframe>
+  </div>
+</div>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <a href="#" onclick="showPage('home-page'); return false;">Services</a>
+      <a href="#" onclick="showPage('saved-page'); return false;" class="saved-nav-btn">
+         Saved <span class="nav-badge" id="saved-nav-count">0</span>
+      </a>
+      <a href="https://api.whatsapp.com/send?phone=919496806919&text=Hi,%20I%20am%20a%20customer%20of%20yours." target="_blank">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<div id="home-page" class="page active">
+  <section class="hero">
+    <div class="wrap">
+      <h1>Hire the <span class="accent">right specialist<svg viewBox="0 0 200 12" preserveAspectRatio="none"><path d="M2 9C40 2 160 2 198 9" stroke="#38BDF8" stroke-width="3" fill="none" stroke-linecap="round"/></svg></span>, directly on WhatsApp.</h1>
+      <p>We connect you directly with trusted, vetted specialists via WhatsApp.</p>
+    </div>
+  </section>
+
+  <section class="categories">
+    <div class="wrap">
+      <div class="cat-heading">
+        <div class="cat-eyebrow">✨ OUR PREMIUM SERVICE ✨</div>
+        <h2>Our Services</h2>
+        <p>Select a category to view our team members.</p>
+      </div>
+
+      <div class="grid">
+        <div class="card" onclick="showPage('editors-page')">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="icon">
+                <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </div>
+              <h3>🎬 Editors</h3>
+            </div>
+            <div class="card-slot">
+              <span class="profile-count-badge" id="editors-count-badge">1 out of 10</span>
+              <div class="go-inside-btn">
+                <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </div>
+            </div>
+          </div>
+          <p>Professional video and photo editing using CapCut, DaVinci Resolve, After Effects, and Lightroom.</p>
+          <div class="tags"><span>Video Editing</span><span>Photo Editing</span><span>Effects</span></div>
+        </div>
+
+        <div class="card" onclick="showPage('photo-video-page')">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="icon">
+                <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </div>
+              <h3>📸 Photo/Videography</h3>
+            </div>
+            <div class="card-slot">
+              <span class="profile-count-badge" id="photo-count-badge">0 out of 10</span>
+              <div class="go-inside-btn">
+                <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </div>
+            </div>
+          </div>
+          <p>Event coverage, portrait sessions, commercial shoots, cinematics</p>
+          <div class="tags"><span>Photography</span><span>Videography</span><span>Shoots</span></div>
+        </div>
+
+        <div class="card" onclick="showPage('tech-page')">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="icon">
+                <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <h3>💻 IT & Tech Support</h3>
+            </div>
+            <div class="card-slot">
+              <span class="profile-count-badge" id="tech-count-badge">0 out of 10</span>
+              <div class="go-inside-btn">
+                <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </div>
+            </div>
+          </div>
+          <p>Computer repair, software setup, network troubleshooting, technical assistance</p>
+          <div class="tags"><span>Hardware</span><span>Software</span><span>Troubleshooting</span></div>
+        </div>
+      </div>
+
+      <div class="home-wa-container">
+        <a href="https://api.whatsapp.com/send?phone=919496806919&text=Hi,%20I%20am%20a%20customer%20of%20yours." class="home-wa-btn" target="_blank">
+          <span>💬 Chat with Us on WhatsApp</span>
+        </a>
+      </div>
+
+      <div class="creator-section">
+        <div class="creator-card">
+          <div class="creator-icon">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="creator-details">
+            <span class="creator-badge">Website Creator</span>
+            <h3>Muhammed Shan</h3>
+            <div class="creator-location">📍 Taliparamba, Kannur</div>
+            <p class="creator-bio">Frontend Developer & Media Enthusiast building platforms that connect local specialists with clients directly and seamlessly.</p>
+            <a href="https://instagram.com/shnyorgin" target="_blank" class="instagram-btn">
+              <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 2.817-.199.2-.199 6.98-2.817 6.98-2.817 0-3.259.014-3.667.072-4.947 2.618-4.358 2.817-6.78 2.817-6.98.2-3.259.014-3.667.072-4.947 4.358-.2 6.78-2.618 6.98-2.817.199-.2.199-6.98 2.817-6.98 2.817 0 3.259-.014 3.667-.072 4.947-2.618 4.358-2.817 6.78-2.817 6.98-.2 3.259-.014 3.667-.072 4.947zM12 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+              <span>Follow @shnyorgin</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Editors Page -->
+<div id="editors-page" class="page">
+  <div class="wrap">
+    <button class="back-btn" onclick="showPage('home-page')">← Back to Services</button>
+    <div class="cat-heading">
+      <h2>🎬 Video & Photo Editors</h2>
+      <p>Direct chat available with skilled editors</p>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-tab active" data-tier="all" onclick="filterTier('editors-page', 'editors-grid', 'all')">All</button>
+      <button class="filter-tab tab-gold" data-tier="gold" onclick="filterTier('editors-page', 'editors-grid', 'gold')">Gold</button>
+      <button class="filter-tab tab-silver" data-tier="silver" onclick="filterTier('editors-page', 'editors-grid', 'silver')">Silver</button>
+    </div>
+
+    <div class="pro-grid" id="editors-grid">
+      <div class="pro-card add-profile-card" onclick="openModal('editors-grid', 'Video & Photo Editing')">
+        <div class="add-profile-content">
+          <div class="add-profile-icon">+</div>
+          <span>Add Your Profile Here</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Photo/Videography Page -->
+<div id="photo-video-page" class="page">
+  <div class="wrap">
+    <button class="back-btn" onclick="showPage('home-page')">← Back to Services</button>
+    <div class="cat-heading">
+      <h2>📸 Photo & Videographers</h2>
+      <p>Direct chat available with skilled photographers</p>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-tab active" data-tier="all" onclick="filterTier('photo-video-page', 'photo-video-grid', 'all')">All</button>
+      <button class="filter-tab tab-gold" data-tier="gold" onclick="filterTier('photo-video-page', 'photo-video-grid', 'gold')">Gold</button>
+      <button class="filter-tab tab-silver" data-tier="silver" onclick="filterTier('photo-video-page', 'photo-video-grid', 'silver')">Silver</button>
+    </div>
+
+    <div class="pro-grid" id="photo-video-grid">
+      <div class="pro-card add-profile-card" onclick="openModal('photo-video-grid', 'Photography & Videography')">
+        <div class="add-profile-content">
+          <div class="add-profile-icon">+</div>
+          <span>Add Your Profile Here</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tech Support Page -->
+<div id="tech-page" class="page">
+  <div class="wrap">
+    <button class="back-btn" onclick="showPage('home-page')">← Back to Services</button>
+    <div class="cat-heading">
+      <h2>💻 IT & Tech Support</h2>
+      <p>Direct chat available with technical experts</p>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-tab active" data-tier="all" onclick="filterTier('tech-page', 'tech-grid', 'all')">All</button>
+      <button class="filter-tab tab-gold" data-tier="gold" onclick="filterTier('tech-page', 'tech-grid', 'gold')">Gold</button>
+      <button class="filter-tab tab-silver" data-tier="silver" onclick="filterTier('tech-page', 'tech-grid', 'silver')">Silver</button>
+    </div>
+
+    <div class="pro-grid" id="tech-grid">
+      <div class="pro-card add-profile-card" onclick="openModal('tech-grid', 'IT & Tech Support')">
+        <div class="add-profile-content">
+          <div class="add-profile-icon">+</div>
+          <span>Add Your Profile Here</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Saved Profiles Page -->
+<div id="saved-page" class="page">
+  <div class="wrap">
+    <button class="back-btn" onclick="showPage('home-page')">← Back to Services</button>
+    <div class="cat-heading">
+      <h2>❤️ Saved Profiles</h2>
+      <p>Profiles you have favorited across all categories</p>
+    </div>
+
+    <div class="pro-grid" id="saved-grid">
+      <!-- Dynamically inserted -->
+    </div>
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal">
+    <h2>Apply for Profile Listing</h2>
+    <div class="modal-subtitle">Submit details to list your services</div>
+
+    <div class="form-group">
+      <label>Badge Tier Plan *</label>
+      <select id="profTier" onchange="updateModalPrice()">
+        <option value="silver" selected>Silver Badge Plan (₹100+)</option>
+        <option value="gold">Gold Badge Plan (₹300+)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Full Name *</label>
+      <input type="text" id="profName" placeholder="e.g. Muhammed Shan">
+    </div>
+
+    <div class="form-group">
+      <label>Location *</label>
+      <input type="text" id="profPlace" placeholder="e.g. Taliparamba, Kannur">
+    </div>
+
+    <div class="form-group">
+      <label>Specialization / Role *</label>
+      <input type="text" id="profRole" placeholder="e.g. Video Editor / Reels Specialist">
+    </div>
+
+    <div class="form-group">
+      <label>Apps / Tools Used</label>
+      <input type="text" id="profApps" placeholder="e.g. Premiere Pro, CapCut, DaVinci">
+    </div>
+
+    <div class="form-group">
+      <label>Experience</label>
+      <input type="text" id="profExp" placeholder="e.g. 2 Years Experience">
+    </div>
+
+    <div class="form-group">
+      <label>WhatsApp Phone Number *</label>
+      <input type="text" id="profPhone" placeholder="e.g. 919496806919">
+    </div>
+
+    <div class="form-group">
+      <label>Email Address *</label>
+      <input type="email" id="profEmail" placeholder="e.g. applicant@email.com">
+    </div>
+
+    <div class="tier-rates-box">
+      <div class="tier-rates-title">Badge Fee Options:</div>
+      <div class="tier-rate-item">
+        <span>Silver Badge:</span>
+        <strong>₹100+</strong>
+      </div>
+      <div class="tier-rate-item">
+        <span>Gold Badge:</span>
+        <strong>₹300+</strong>
+      </div>
+    </div>
+
+    <div class="price-tag" id="dynamicPriceTag">Listing Fee: ₹100+ (Silver Tier)</div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-submit" onclick="submitProfileForApproval()">Submit Request</button>
+    </div>
+
+    <div class="modal-nav-row">
+      <button class="btn-nav" onclick="goHomeFromModal()">Home Page</button>
+    </div>
+
+    <a href="https://api.whatsapp.com/send?phone=919496806919&text=Hi,%20I%20have%20a%20question%20about%20profile%20listing." class="wa-chat-footer-btn" target="_blank">
+      <span>💬 Need Help? Chat Admin</span>
+    </a>
+  </div>
+</div>
+
+<!-- Image Modal -->
+<div class="img-modal-overlay" id="imageModal" onclick="closeImageModal()">
+  <img src="" id="modalImage" class="img-modal-content" alt="Enlarged Profile View">
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>&copy; 2026 shnyorgin. All rights reserved.</p>
+  </div>
+</footer>
+
 </body>
 </html>
